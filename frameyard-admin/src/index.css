@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #004ac6;
+  --color-secondary: #505f76;
+  --color-tertiary: #006329;
+  --color-background: #faf8ff;
+  --color-on-background: #131b2e;
+  --color-surface: #faf8ff;
+  --color-on-surface: #131b2e;
+  --color-on-surface-variant: #434655;
+  --color-outline-variant: #c3c6d7;
+  
+  /* Containers */
+  --color-primary-container: #2563eb;
+  --color-secondary-container: #d0e1fb;
+  --color-on-secondary-container: #54647a;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f3ff;
+  --color-surface-container-high: #e2e7ff;
+  --color-surface-container-highest: #dae2fd;
+  
+  /* Spacing */
+  --spacing-stack-md: 16px;
+  --spacing-margin-mobile: 16px;
+  --spacing-gutter: 24px;
+  --spacing-topbar-height: 64px;
+  --spacing-stack-sm: 8px;
+  --spacing-sidebar-width: 280px;
+  --spacing-margin-desktop: 32px;
+  --spacing-stack-lg: 24px;
+  --spacing-container-max: 1440px;
+  
+  /* Typography */
+  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-on-background font-sans antialiased min-h-screen;
+    font-size: 16px;
+  }
+}
+
+/* Custom Utilities */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #c3c6d7;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #737686;
+}
+
+.inner-stroke {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
