@@ -90,9 +90,10 @@ export const OrdersPage: React.FC = () => {
       .filter(Boolean)
       .join(', ') || 'No address';
   const getItemsCount = (order: Order) => order.orderItems.reduce((sum, item) => sum + item.quantity, 0);
-  const getVariantName = (item: Order['orderItems'][number]) =>
-    `${item.frameSize} (${item.mountType ? 'Border' : 'No Border'}, ${item.glassType ? 'Glass' : 'No Glass'})`;
-
+  const getVariantName = (
+  item: Order['orderItems'][number]
+) =>
+  `${item.frameSize} (${item.mountType}, ${item.glassType})`;
   const getDropdownStyles = (status: OrderStatus) => {
     switch (status) {
       case 'PENDING':
