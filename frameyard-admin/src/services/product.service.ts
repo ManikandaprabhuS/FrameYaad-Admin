@@ -137,6 +137,12 @@ export const productService = {
     return response.data;
   },
 
+deleteProduct: async (productId: string): Promise<{ success: boolean; message: string }> => {
+  const response = await api.delete(`/products/${productId}`
+  );
+  return response.data;
+},
+
   exportInventory: async (): Promise<Blob> => {
     const response = await api.get(
       "/products/export",

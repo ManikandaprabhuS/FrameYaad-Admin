@@ -86,10 +86,27 @@ export const ProductsPage: React.FC = () => {
     setIsDeleteOpen(true);
   };
 
-  const handleConfirmDelete = async () => {
+ const handleConfirmDelete = async () => {
+  if (!deleteId) {
+    return;
+  }
+  try {
+    await productService.deleteProduct(
+      deleteId
+    );
+    await fetchProducts();
+  } catch (error) {
+
+    console.error(
+      "Delete failed:",
+      error
+    );
+
+  } finally {
     setDeleteId(null);
     setIsDeleteOpen(false);
-  };
+  }
+};
 
   const handleExport = async () => {
     try {
