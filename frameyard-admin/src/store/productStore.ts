@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Product } from '../types';
 import { ProductPayload, productService, VariantPayload } from '../services/product.service';
+import { showError, showSuccess } from '../utils/toast';
 
 interface ProductState {
   products: Product[];
@@ -51,9 +52,12 @@ export const useProductStore = create<ProductState>((set) => ({
         products: [...state.products, newProd],
         loading: false,
       }));
+      showSuccess('Product added successfully');
       return newProd;
     } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to add product', loading: false });
+      const errMsg = err.response?.data?.message || 'Failed to add product';
+      set({ error: errMsg, loading: false });
+      showError(errMsg);
       return null;
     }
   },
@@ -86,9 +90,12 @@ export const useProductStore = create<ProductState>((set) => ({
           loading: false,
         };
       });
+      showSuccess('Product updated successfully');
       return true;
     } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to update product', loading: false });
+      const errMsg = err.response?.data?.message || 'Failed to update product';
+      set({ error: errMsg, loading: false });
+      showError(errMsg);
       return false;
     }
   },
@@ -103,9 +110,12 @@ export const useProductStore = create<ProductState>((set) => ({
         products: state.products.map((p) => (p.id === productId ? product : p)),
         loading: false,
       }));
+      showSuccess('Variant added successfully');
       return true;
     } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to add variant', loading: false });
+      const errMsg = err.response?.data?.message || 'Failed to add variant';
+      set({ error: errMsg, loading: false });
+      showError(errMsg);
       return false;
     }
   },
@@ -129,9 +139,12 @@ export const useProductStore = create<ProductState>((set) => ({
           : null,
         loading: false,
       }));
+      showSuccess('Variant updated successfully');
       return true;
     } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to update variant', loading: false });
+      const errMsg = err.response?.data?.message || 'Failed to update variant';
+      set({ error: errMsg, loading: false });
+      showError(errMsg);
       return false;
     }
   },
@@ -153,9 +166,12 @@ export const useProductStore = create<ProductState>((set) => ({
           : null,
         loading: false,
       }));
+      showSuccess('Variant deleted successfully');
       return true;
     } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to delete variant', loading: false });
+      const errMsg = err.response?.data?.message || 'Failed to delete variant';
+      set({ error: errMsg, loading: false });
+      showError(errMsg);
       return false;
     }
   },

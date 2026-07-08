@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useNotifications from '../hooks/useNotifications';
 import { customerService } from '../services/customer.service';
+import { showError } from '../utils/toast';
 import { 
   LayoutDashboard, 
   Package, 
@@ -21,18 +22,18 @@ import {
 
 export const AdminLayout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { notifications, toggleNotificationRead } = useNotifications(true);
+  const { notifications } = useNotifications(true);
   const avatarInitial = user?.name?.charAt(0) || 'U';
 
   // Close mobile drawer on route change
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setMobileMenuOpen(false);
-      setNotifDropdownOpen(false);
+      setMobileSearchOpen(false);
     }, 0);
 
     return () => window.clearTimeout(timeout);
@@ -69,7 +70,7 @@ export const AdminLayout: React.FC = () => {
         return;
       } catch (error) {
         console.error('Customer lookup failed', error);
-        window.alert('No customer found for that phone number.');
+        showError('No customer found for that phone number.');
         return;
       }
     }
@@ -254,17 +255,17 @@ export const AdminLayout: React.FC = () => {
       <div className="flex-1 flex flex-col md:ml-sidebar-width w-full max-w-full min-h-screen">
         
         {/* Sticky Header */}
-        <header className="h-topbar-height sticky top-0 z-40 bg-surface-container-lowest border-b border-outline-variant shadow-sm flex items-center justify-between px-margin-desktop transition-all">
+        <header className="h-topbar-height sticky top-0 z-40 bg-surface-container-lowest border-b border-outline-variant shadow-sm flex items-center justify-between px-margin-mobile md:px-margin-desktop transition-all">
           
           {/* Mobile hamburger menu & logo */}
-          <div className="md:hidden flex items-center gap-3">
+          <div className="md:hidden flex items-center gap-2 min-w-0">
             <button 
               onClick={() => setMobileMenuOpen(true)}
-              className="p-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-all scale-95 duration-100"
+              className="p-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-all scale-95 duration-100 flex-shrink-0"
             >
               <Menu className="w-5 h-5" />
             </button>
-            <span className="font-sans text-md font-bold text-on-surface">FrameYard</span>
+            <span className="font-sans text-md font-bold text-on-surface truncate">FrameYard</span>
           </div>
 
           {/* Breadcrumbs (Desktop) */}
@@ -273,7 +274,7 @@ export const AdminLayout: React.FC = () => {
           </div>
 
           {/* Search, Notifications & Actions */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             
             {/* Search (Desktop) */}
             <div className="hidden lg:flex items-center bg-surface px-3 py-1.5 rounded-full border border-outline-variant focus-within:border-primary focus-within:bg-surface-container-lowest transition-colors w-64">
@@ -290,52 +291,30 @@ export const AdminLayout: React.FC = () => {
               />
             </div>
 
-            {/* Notification drop */}
-            <div className="relative">
-              <button 
-                onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
-                className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-all relative"
-              >
-                <Bell className="w-[18px] h-[18px]" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full" />
-                )}
-              </button>
+            {/* Search toggle (Mobile / Tablet) */}
+            <button
+              onClick={() => setMobileSearchOpen((prev) => !prev)}
+              className="lg:hidden w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-all"
+              title="Search"
+              aria-label="Toggle search"
+            >
+              {mobileSearchOpen ? <X className="w-[18px] h-[18px]" /> : <Search className="w-[18px] h-[18px]" />}
+            </button>
 
-              {notifDropdownOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setNotifDropdownOpen(false)} />
-                  <div className="absolute right-0 top-full mt-2 w-80 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl z-50 overflow-hidden transform origin-top-right">
-                    <div className="p-3 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
-                      <span className="text-xs font-bold text-on-surface">Recent Notifications</span>
-                      <Link to="/admin/notifications" className="text-[11px] text-primary hover:underline">View All</Link>
-                    </div>
-                    <div className="max-h-64 overflow-y-auto divide-y divide-outline-variant/30 custom-scrollbar">
-                      {notifications.length === 0 ? (
-                        <div className="p-4 text-center text-xs text-on-surface-variant">No alerts.</div>
-                      ) : (
-                        notifications.slice(0, 4).map((notif) => (
-                          <div 
-                            key={notif.id} 
-                            onClick={() => {
-                              toggleNotificationRead(notif.id);
-                              setNotifDropdownOpen(false);
-                            }}
-                            className={`p-3 text-left hover:bg-surface transition-colors cursor-pointer ${!notif.read ? 'bg-primary/5' : ''}`}
-                          >
-                            <p className="text-xs font-semibold text-on-surface">{notif.title}</p>
-                            <p className="text-[11px] text-on-surface-variant mt-0.5 line-clamp-2">{notif.message}</p>
-                            <span className="text-[9px] text-on-surface-variant/60 mt-1 block">
-                              {new Date(notif.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </>
+            {/* Notification icon - navigates to notifications page */}
+            <Link
+              to="/admin/notifications"
+              className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-all relative"
+              title="Notifications"
+              aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+            >
+              <Bell className="w-[18px] h-[18px]" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-error text-on-error text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-surface-container-lowest">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
               )}
-            </div>
+            </Link>
 
             <button className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-all">
               <HelpCircle className="w-[18px] h-[18px]" />
@@ -352,6 +331,27 @@ export const AdminLayout: React.FC = () => {
 
           </div>
         </header>
+
+        {/* Expandable Search Bar (Mobile / Tablet) */}
+        {mobileSearchOpen && (
+          <div className="lg:hidden sticky top-topbar-height z-30 bg-surface-container-lowest border-b border-outline-variant px-margin-mobile py-3 shadow-sm animate-fade-in">
+            <div className="flex items-center bg-surface px-3 py-2 rounded-full border border-outline-variant focus-within:border-primary focus-within:bg-surface-container-lowest transition-colors">
+              <Search className="w-4 h-4 text-outline-variant mr-2 flex-shrink-0" />
+              <input
+                autoFocus
+                className="bg-transparent border-none focus:ring-0 text-sm text-on-surface w-full p-0 placeholder-on-surface-variant/60 focus:outline-none"
+                placeholder="Search orders, customers..."
+                type="text"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    void handleGlobalSearch(e.currentTarget.value);
+                    setMobileSearchOpen(false);
+                  }
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Viewport content */}
         <main className="flex-1 p-margin-mobile md:p-margin-desktop bg-surface w-full max-w-container-max mx-auto">

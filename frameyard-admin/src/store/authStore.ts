@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { User } from '../types';
 import { authService } from '../services/auth.service';
+import { showError, showSuccess } from '../utils/toast';
 
 interface AuthState {
   user: User | null;
@@ -35,10 +36,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       );
 
     if (!response.success) {
+  const errMsg = response.message || "Login failed";
   set({
-    error: response.message || "Login failed",
+    error: errMsg,
     loading: false,
   });
+  showError(errMsg);
   return false;
 }
 const user = response.user;
@@ -49,6 +52,7 @@ const user = response.user;
       isAuthenticated: true,
       loading: false,
     });
+    showSuccess('Logged in successfully');
     return true;
   } catch (err: any) {
     const errMsg =
@@ -58,6 +62,7 @@ const user = response.user;
       error: errMsg,
       loading: false,
     });
+    showError(errMsg);
     return false;
   }
 },
@@ -74,6 +79,7 @@ const user = response.user;
       isAuthenticated: false,
       loading: false,
     });
+    showSuccess('Logged out successfully');
 
   } catch {
 
@@ -87,6 +93,7 @@ const user = response.user;
       isAuthenticated: false,
       loading: false,
     });
+    showSuccess('Logged out successfully');
   }
 },
   checkAuth: async () => {
@@ -120,9 +127,12 @@ const user = response.user;
     try {
       const updatedUser = await authService.updateProfile(profileData);
       set({ user: updatedUser, loading: false });
+      showSuccess('Profile updated successfully');
       return true;
     } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Update failed', loading: false });
+      const errMsg = err.response?.data?.message || 'Failed to update profile';
+      set({ error: errMsg, loading: false });
+      showError(errMsg);
       return false;
     }
   },

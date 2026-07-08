@@ -16,18 +16,7 @@ const [formData, setFormData] = useState({
 });
 
 const handleUpdate = async () => {
-  const success =
-    await updateProfile(formData);
-
-  if (success) {
-    alert(
-      'Profile updated successfully'
-    );
-  } else {
-    alert(
-      'Failed to update profile'
-    );
-  }
+  await updateProfile(formData);
 };
 
 
@@ -148,9 +137,9 @@ onChange={(e) => setFormData({...formData,postalCode: e.target.value,})}
 </div>
 </div>
             </div>
-            <div className="flex justify-end pt-4 border-t border-outline-variant">
+            <div className="flex justify-stretch sm:justify-end pt-4 border-t border-outline-variant">
              <button  type="button" onClick={handleUpdate}
-                className="flex items-center gap-2 px-6 py-2.5 bg-primary text-on-primary rounded-xl font-semibold shadow-sm hover:bg-primary/95 transition-all hover:scale-[1.02]"
+                className="flex items-center justify-center gap-2 px-6 py-2.5 bg-primary text-on-primary rounded-xl font-semibold shadow-sm hover:bg-primary/95 transition-all hover:scale-[1.02] w-full sm:w-auto"
               >
                 <Save className="w-4 h-4" />
                 Update  Changes

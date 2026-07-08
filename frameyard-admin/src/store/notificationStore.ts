@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Notification } from '../types';
 import { notificationService } from '../services/notification.service';
+import { showError, showSuccess } from '../utils/toast';
 
 interface NotificationState {
   notifications: Notification[];
@@ -31,8 +32,11 @@ export const useNotificationStore = create<NotificationState>((set) => ({
     try {
       const updated = await notificationService.markAllRead();
       set({ notifications: updated });
+      showSuccess('All notifications marked as read');
     } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to mark notifications as read' });
+      const errMsg = err.response?.data?.message || 'Failed to mark notifications as read';
+      set({ error: errMsg });
+      showError(errMsg);
     }
   },
 
@@ -42,8 +46,11 @@ export const useNotificationStore = create<NotificationState>((set) => ({
       set((state) => ({
         notifications: state.notifications.map((n) => (n.id === id ? updated : n)),
       }));
+      showSuccess(updated.read ? 'Notification marked as read' : 'Notification marked as unread');
     } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to update notification read status' });
+      const errMsg = err.response?.data?.message || 'Failed to update notification';
+      set({ error: errMsg });
+      showError(errMsg);
     }
   },
 
@@ -53,8 +60,11 @@ export const useNotificationStore = create<NotificationState>((set) => ({
       set((state) => ({
         notifications: state.notifications.filter((n) => n.id !== id),
       }));
+      showSuccess('Notification deleted successfully');
     } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to delete notification' });
+      const errMsg = err.response?.data?.message || 'Failed to delete notification';
+      set({ error: errMsg });
+      showError(errMsg);
     }
   },
 }));

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Order, OrderStatus } from '../types';
 import { orderService } from '../services/order.service';
+import { showError, showSuccess } from '../utils/toast';
 
 type OrderQueryParams = {
   page?: number;
@@ -101,9 +102,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         orders: state.orders.map((o) => (o.id === id ? updatedOrder : o)),
       }));
       await get().fetchOrders(get().lastQuery, { silent: true });
+      showSuccess('Order status updated successfully');
       return true;
     } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to update order status' });
+      const errMsg = err.response?.data?.message || 'Failed to update order status';
+      set({ error: errMsg });
+      showError(errMsg);
       return false;
     }
   },

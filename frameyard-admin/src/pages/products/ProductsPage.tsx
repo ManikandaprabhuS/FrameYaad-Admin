@@ -7,6 +7,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { Plus, Download, Edit2, Trash2, Search } from 'lucide-react';
 import { Product } from '../../types';
 import { productService } from '../../services/product.service';
+import { showError, showSuccess } from '../../utils/toast';
 
 export const ProductsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -95,13 +96,9 @@ export const ProductsPage: React.FC = () => {
       deleteId
     );
     await fetchProducts();
-  } catch (error) {
-
-    console.error(
-      "Delete failed:",
-      error
-    );
-
+    showSuccess('Product deleted successfully');
+  } catch (error: any) {
+    showError(error?.response?.data?.message || 'Failed to delete product');
   } finally {
     setDeleteId(null);
     setIsDeleteOpen(false);
@@ -123,8 +120,9 @@ export const ProductsPage: React.FC = () => {
 
       link.remove();
       window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Export failed:", error);
+      showSuccess('Inventory exported successfully');
+    } catch (error: any) {
+      showError(error?.response?.data?.message || 'Failed to export inventory');
     }
   };
 

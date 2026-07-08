@@ -6,6 +6,7 @@ import Badge from '../../components/ui/Badge';
 import { ArrowLeft, Plus, Edit2, Trash2, Image as ImageIcon, Upload, Info } from 'lucide-react';
 import { ProductImage, ProductStatus } from '../../types';
 import { uploadProductImages } from '../../services/product.service';
+import { showError, showSuccess } from '../../utils/toast';
 
 type VariantForm = {
   id: string;
@@ -25,6 +26,9 @@ type ProductImageDraft = ProductImage & {
 };
 
 const MAX_IMAGES = 10;
+const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
+const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4'];
+const ALLOWED_EXTENSIONS = /\.(jpe?g|png|webp|mp4)$/i;
 
 const isVideoUrl = (url: string) => /\.mp4(\?|$)/i.test(url);
 
@@ -139,18 +143,44 @@ export const ProductDetailsPage: React.FC = () => {
 
     const remainingSlots = MAX_IMAGES - images.length;
     if (remainingSlots <= 0) {
-      setImageError(`You can upload up to ${MAX_IMAGES} images.`);
+      const msg = `You can upload up to ${MAX_IMAGES} images.`;
+      setImageError(msg);
+      showError(msg);
       return;
     }
 
-    const filesToUpload = selectedFiles.slice(0, remainingSlots);
-    if (selectedFiles.length > remainingSlots) {
-      setImageError(`Only ${remainingSlots} more image(s) can be added.`);
-    } else {
-      setImageError(null);
+    // Validate file type and size before uploading
+    const validFiles: File[] = [];
+    const rejections: string[] = [];
+
+    for (const file of selectedFiles.slice(0, remainingSlots)) {
+      const hasValidType =
+        ALLOWED_FILE_TYPES.includes(file.type) || ALLOWED_EXTENSIONS.test(file.name);
+      if (!hasValidType) {
+        rejections.push(`"${file.name}" has an unsupported format.`);
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        rejections.push(`"${file.name}" exceeds the 15MB limit.`);
+        continue;
+      }
+      validFiles.push(file);
     }
 
-    const tempEntries: ProductImageDraft[] = filesToUpload.map((file, index) => {
+    if (selectedFiles.length > remainingSlots) {
+      rejections.push(`Only ${remainingSlots} more image(s) can be added.`);
+    }
+
+    if (validFiles.length === 0) {
+      const msg = rejections[0] || 'No valid images selected.';
+      setImageError(msg);
+      showError(msg);
+      return;
+    }
+
+    setImageError(rejections.length > 0 ? rejections.join(' ') : null);
+
+    const tempEntries: ProductImageDraft[] = validFiles.map((file, index) => {
       const previewUrl = URL.createObjectURL(file);
       return {
         id: `temp-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 7)}`,
@@ -166,60 +196,78 @@ export const ProductDetailsPage: React.FC = () => {
     setIsUploadingImages(true);
 
     try {
-      await Promise.all(
-        tempEntries.map(async (entry, index) => {
-          try {
-            const uploadedUrls = await uploadProductImages([filesToUpload[index]]);
-            const finalUrl = uploadedUrls[0];
+      // Upload all selected files in a single request to avoid race conditions
+      const uploadedUrls = await uploadProductImages(validFiles);
 
-            if (!finalUrl) {
-              throw new Error('Upload completed without returning an image URL.');
-            }
+      if (!Array.isArray(uploadedUrls) || uploadedUrls.length === 0) {
+        throw new Error('Upload completed without returning any image URLs.');
+      }
 
-            setImages((prev) =>
-              normalizeImageOrder(
-                prev.map((image) =>
-                  image.id === entry.id
-                    ? {
-                        ...image,
-                        imageUrl: finalUrl,
-                        previewUrl: finalUrl,
-                        isUploading: false,
-                      }
-                    : image
-                )
-              )
-            );
-
-            if (entry.previewUrl?.startsWith('blob:')) {
-              URL.revokeObjectURL(entry.previewUrl);
-            }
-          } catch (error: unknown) {
-            setImages((prev) =>
-              normalizeImageOrder(prev.filter((image) => image.id !== entry.id))
-            );
-            const uploadError = error as {
-              response?: { data?: { message?: string } };
-              message?: string;
-            };
-            setImageError(
-              uploadError?.response?.data?.message ||
-                uploadError?.message ||
-                'Failed to upload images.'
-            );
+      const urlByTempId = new Map<string, string>();
+      tempEntries.forEach((entry, index) => {
+        const finalUrl = uploadedUrls[index];
+        if (finalUrl) {
+          urlByTempId.set(entry.id, finalUrl);
+          if (entry.previewUrl?.startsWith('blob:')) {
+            URL.revokeObjectURL(entry.previewUrl);
           }
-        })
+        }
+      });
+
+      setImages((prev) =>
+        normalizeImageOrder(
+          prev
+            .map((image) => {
+              const finalUrl = urlByTempId.get(image.id);
+              if (!finalUrl) return image;
+              return {
+                ...image,
+                imageUrl: finalUrl,
+                previewUrl: finalUrl,
+                isUploading: false,
+              };
+            })
+            // Drop any temp entries that didn't receive a URL back
+            .filter(
+              (image) =>
+                !tempEntries.some((entry) => entry.id === image.id) ||
+                urlByTempId.has(image.id)
+            )
+        )
       );
+
+      const successCount = urlByTempId.size;
+      if (successCount > 0) {
+        showSuccess(
+          successCount === 1
+            ? 'Image uploaded successfully'
+            : `${successCount} images uploaded successfully`
+        );
+      } else {
+        throw new Error('No images were uploaded. Please try again.');
+      }
     } catch (error: unknown) {
+      // Remove all temp entries from this batch on failure
+      const tempIds = new Set(tempEntries.map((entry) => entry.id));
+      setImages((prev) => {
+        prev.forEach((image) => {
+          if (tempIds.has(image.id) && image.previewUrl?.startsWith('blob:')) {
+            URL.revokeObjectURL(image.previewUrl);
+          }
+        });
+        return normalizeImageOrder(prev.filter((image) => !tempIds.has(image.id)));
+      });
+
       const uploadError = error as {
         response?: { data?: { message?: string } };
         message?: string;
       };
-      setImageError(
+      const errMsg =
         uploadError?.response?.data?.message ||
-          uploadError?.message ||
-          'Failed to upload images.'
-      );
+        uploadError?.message ||
+        'Failed to upload images.';
+      setImageError(errMsg);
+      showError(errMsg);
     } finally {
       setIsUploadingImages(false);
     }
@@ -385,27 +433,26 @@ export const ProductDetailsPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in pb-12">
-      <div className="flex items-center justify-between border-b border-outline-variant/60 pb-5">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/admin/products')}
-            className="p-2 border border-outline-variant rounded-xl hover:bg-surface-container-low transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <nav className="flex items-center gap-1 text-[11px] text-on-surface-variant">
-              <Link to="/admin/products" className="hover:text-primary">Products</Link>
-              <span>&gt;</span>
-              <span className="text-primary font-medium">{isNew ? 'New Product' : 'Edit Product'}</span>
-            </nav>
-            <h2 className="text-2xl font-bold text-on-surface mt-0.5">
-              {isNew ? 'New Product' : name || 'Edit Product'}
-            </h2>
-          </div>
+    <div className="space-y-6 animate-fade-in pb-28 sm:pb-12">
+      <div className="flex items-center gap-3 border-b border-outline-variant/60 pb-5">
+        <button
+          onClick={() => navigate('/admin/products')}
+          className="p-2 border border-outline-variant rounded-xl hover:bg-surface-container-low transition-colors flex-shrink-0"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <nav className="flex items-center gap-1 text-[11px] text-on-surface-variant">
+            <Link to="/admin/products" className="hover:text-primary">Products</Link>
+            <span>&gt;</span>
+            <span className="text-primary font-medium">{isNew ? 'New Product' : 'Edit Product'}</span>
+          </nav>
+          <h2 className="text-2xl font-bold text-on-surface mt-0.5 truncate">
+            {isNew ? 'New Product' : name || 'Edit Product'}
+          </h2>
         </div>
-        <div className="flex items-center gap-3">
+        {/* Desktop / tablet action buttons */}
+        <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
           <button
             type="button"
             onClick={() => navigate('/admin/products')}
@@ -619,7 +666,7 @@ export const ProductDetailsPage: React.FC = () => {
               <div>
                 <h3 className="text-sm font-bold text-on-surface uppercase tracking-wider">Product Images</h3>
                 <p className="mt-1 text-xs text-on-surface-variant">
-                  Upload up to {MAX_IMAGES} files. JPG, JPEG, PNG, WEBP, and MP4 are supported.
+                  Upload up to {MAX_IMAGES} files (max 15MB each). JPG, JPEG, PNG, WEBP, and MP4 are supported.
                 </p>
               </div>
               <button
@@ -733,6 +780,25 @@ export const ProductDetailsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Sticky mobile action bar */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center gap-3 border-t border-outline-variant bg-surface-container-lowest px-4 py-3 shadow-[0_-2px_8px_rgba(15,23,42,0.08)]">
+        <button
+          type="button"
+          onClick={() => navigate('/admin/products')}
+          className="flex-1 px-5 py-2.5 border border-outline-variant rounded-xl text-sm font-semibold hover:bg-surface-container-low transition-colors"
+        >
+          Discard
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={isUploadingImages || isSaving}
+          className="flex-1 px-5 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold hover:bg-primary/95 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {isSaving ? 'Saving...' : 'Save Product'}
+        </button>
+      </div>
+
       <Modal
         isOpen={variantModalOpen}
         onClose={() => setVariantModalOpen(false)}
@@ -769,11 +835,11 @@ export const ProductDetailsPage: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold mb-2"> MOUNT TYPE </label>
+            <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Mount Type</label>
             <select
               value={varMountType}
               onChange={(event) => setVarMountType(event.target.value)}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border border-outline-variant rounded-lg p-2.5 text-sm focus:ring-1 focus:ring-primary outline-none cursor-pointer"
             >
               <option value="NONE">NONE</option>
               <option value="OPTION_1">OPTION 1</option>
@@ -781,12 +847,11 @@ export const ProductDetailsPage: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold mb-2">GLASS TYPE</label>
-
+            <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Glass Type</label>
             <select
               value={varGlassType}
               onChange={(event) => setVarGlassType(event.target.value)}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border border-outline-variant rounded-lg p-2.5 text-sm focus:ring-1 focus:ring-primary outline-none cursor-pointer"
             >
               <option value="NONE">NONE</option>
               <option value="OPTION_1">OPTION 1</option>
