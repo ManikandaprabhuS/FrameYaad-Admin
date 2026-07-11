@@ -1,19 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import useProducts from '../../hooks/useProducts';
 import useOrders from '../../hooks/useOrders';
 import useCustomers from '../../hooks/useCustomers';
 import KpiCard from '../../components/ui/KpiCard';
 import Badge from '../../components/ui/Badge';
-import { showError, showSuccess } from '../../utils/toast';
 import { 
+  DollarSign, 
   ShoppingBag, 
   Users, 
   Package, 
   ArrowRight,
-  IndianRupee,
-  Download,
-  Calendar
+  TrendingUp,
+  AlertTriangle,
+  IndianRupee
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -45,68 +45,19 @@ export const OverviewPage: React.FC = () => {
   const calculatedCustomers = customers.length;
   const calculatedProducts = products.filter((product) => product.isActive).length;
 
-  // Date range for revenue chart (defaults to last 30 days)
-  const toInputDate = (date: Date) => date.toISOString().split('T')[0];
-  const today = new Date();
-  const defaultStart = new Date();
-  defaultStart.setDate(today.getDate() - 29);
+  const revenueByDay = orders.reduce<Record<string, number>>((acc, order) => {
+    if (order.orderStatus === 'CANCELLED') return acc;
+    const day = new Date(order.createdAt).toLocaleDateString('en-US', {
+      day: '2-digit',
+      month: 'short',
+    });
+    acc[day] = (acc[day] || 0) + Number(order.totalAmount || 0);
+    return acc;
+  }, {});
 
-  const [startDate, setStartDate] = useState(toInputDate(defaultStart));
-  const [endDate, setEndDate] = useState(toInputDate(today));
-
-  const chartData = useMemo(() => {
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-
-    const revenueByDay = orders.reduce<Record<string, number>>((acc, order) => {
-      if (order.orderStatus === 'CANCELLED') return acc;
-      const created = new Date(order.createdAt);
-      if (created < start || created > end) return acc;
-      const key = toInputDate(created);
-      acc[key] = (acc[key] || 0) + Number(order.totalAmount || 0);
-      return acc;
-    }, {});
-
-    return Object.entries(revenueByDay)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, revenue]) => ({
-        key,
-        day: new Date(key).toLocaleDateString('en-US', { day: '2-digit', month: 'short' }),
-        revenue,
-      }));
-  }, [orders, startDate, endDate]);
-
-  const rangeRevenueTotal = chartData.reduce((sum, item) => sum + item.revenue, 0);
-
-  const handleExportRevenue = () => {
-    if (chartData.length === 0) {
-      showError('No revenue data to export for the selected range');
-      return;
-    }
-
-    const rows = [
-      ['Date', 'Revenue'],
-      ...chartData.map((item) => [item.key, item.revenue.toFixed(2)]),
-      ['Total', rangeRevenueTotal.toFixed(2)],
-    ];
-
-    const csvContent = rows
-      .map((row) => row.map((value) => `"${value}"`).join(','))
-      .join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `revenue-report-${startDate}_to_${endDate}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-    showSuccess('Revenue report exported successfully');
-  };
+  const chartData = Object.entries(revenueByDay)
+    .map(([day, revenue]) => ({ day, revenue }))
+    .slice(-7);
 
   // Recent 4 orders
   const recentOrders = orders.slice(0, 4);
@@ -192,74 +143,33 @@ export const OverviewPage: React.FC = () => {
         
         {/* Revenue Line Chart */}
         <div className="lg:col-span-2 bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)] flex flex-col">
-          <div className="flex flex-col gap-4 mb-6 xl:flex-row xl:items-start xl:justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-on-surface uppercase tracking-wider">Revenue</h3>
-              <p className="mt-1 text-xs text-on-surface-variant">
-                Total for range: <span className="font-semibold text-primary">₹{rangeRevenueTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="flex items-center gap-2 rounded-lg border border-outline-variant bg-surface px-2.5 py-1.5">
-                <Calendar className="w-3.5 h-3.5 text-outline-variant flex-shrink-0" />
-                <input
-                  type="date"
-                  value={startDate}
-                  max={endDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-transparent text-xs text-on-surface outline-none focus:ring-0"
-                  aria-label="Start date"
-                />
-                <span className="text-xs text-on-surface-variant">to</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  min={startDate}
-                  max={toInputDate(today)}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-transparent text-xs text-on-surface outline-none focus:ring-0"
-                  aria-label="End date"
-                />
-              </div>
-              <button
-                onClick={handleExportRevenue}
-                className="flex items-center justify-center gap-1.5 text-xs text-primary font-semibold hover:bg-surface-container px-3 py-2 rounded-lg border border-outline-variant transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Export</span>
-              </button>
-            </div>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-sm font-bold text-on-surface uppercase tracking-wider">Revenue (Last 30 Days)</h3>
+            <button className="text-xs text-primary font-semibold hover:bg-surface-container px-3 py-1.5 rounded-lg border border-outline-variant transition-colors">
+              View Report
+            </button>
           </div>
           
           <div className="w-full h-64 mt-auto">
-            {chartData.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center text-center">
-                <Calendar className="w-8 h-8 text-outline-variant mb-2" />
-                <p className="text-sm font-semibold text-on-surface">No revenue in this range</p>
-                <p className="text-xs text-on-surface-variant mt-1">Try selecting a different date range.</p>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="day" tickLine={false} axisLine={false} style={{ fontSize: '11px', fill: '#6b7280' }} />
-                  <YAxis tickLine={false} axisLine={false} style={{ fontSize: '11px', fill: '#6b7280' }} tickFormatter={(v) => `₹${v}`} />
-                  <Tooltip 
-                    contentStyle={{ background: '#fff', border: '1px solid #c3c6d7', borderRadius: '8px', fontSize: '12px' }}
-                    formatter={(value) => [`₹${value}`, 'Revenue']}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="#004ac6"
-                    strokeWidth={2.5}
-                    dot={{ r: 4, stroke: '#004ac6', strokeWidth: 2, fill: '#fff' }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                <XAxis dataKey="day" tickLine={false} axisLine={false} style={{ fontSize: '11px', fill: '#6b7280' }} />
+                <YAxis tickLine={false} axisLine={false} style={{ fontSize: '11px', fill: '#6b7280' }} tickFormatter={(v) => `₹${v}`} />
+                <Tooltip 
+                  contentStyle={{ background: '#fff', border: '1px solid #c3c6d7', borderRadius: '8px', fontSize: '12px' }}
+                  formatter={(value) => [`₹${value}`, 'Revenue']}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#004ac6"
+                  strokeWidth={2.5}
+                  dot={{ r: 4, stroke: '#004ac6', strokeWidth: 2, fill: '#fff' }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
 

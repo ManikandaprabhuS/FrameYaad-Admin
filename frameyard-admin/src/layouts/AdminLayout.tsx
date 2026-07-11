@@ -3,7 +3,6 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useNotifications from '../hooks/useNotifications';
 import { customerService } from '../services/customer.service';
-import { showError } from '../utils/toast';
 import { 
   LayoutDashboard, 
   Package, 
@@ -22,18 +21,25 @@ import {
 
 export const AdminLayout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleToggleCollapse = () => {
+    setIsCollapsed((prev) => !prev);
+    setIsHovered(false);
+  };
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { notifications } = useNotifications(true);
+  const { notifications, toggleNotificationRead } = useNotifications(true);
   const avatarInitial = user?.name?.charAt(0) || 'U';
 
   // Close mobile drawer on route change
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setMobileMenuOpen(false);
-      setMobileSearchOpen(false);
+      setNotifDropdownOpen(false);
     }, 0);
 
     return () => window.clearTimeout(timeout);
@@ -70,7 +76,7 @@ export const AdminLayout: React.FC = () => {
         return;
       } catch (error) {
         console.error('Customer lookup failed', error);
-        showError('No customer found for that phone number.');
+        window.alert('No customer found for that phone number.');
         return;
       }
     }
@@ -113,10 +119,26 @@ export const AdminLayout: React.FC = () => {
       {/* ------------------------------------------------------------- */}
       {/* DESKTOP SIDEBAR */}
       {/* ------------------------------------------------------------- */}
-      <aside className="hidden md:flex w-sidebar-width h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex-col py-stack-lg px-stack-md z-50">
-        <div className="mb-8 px-4 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-on-primary font-bold">FY</div>
-          <div>
+      <aside 
+        onMouseEnter={() => isCollapsed && setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`hidden md:flex h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex-col py-stack-lg z-50 transition-all duration-300 ${
+          (!isCollapsed || isHovered) ? 'w-[280px] px-stack-md' : 'w-[72px] px-3'
+        }`}
+      >
+        <div 
+          onClick={handleToggleCollapse}
+          className={`mb-8 flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0 ${
+            (!isCollapsed || isHovered) ? 'px-4' : 'justify-center'
+          }`}
+          title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        >
+          <div className="w-8 h-8 rounded-lg bg-primary flex-shrink-0 flex items-center justify-center text-on-primary font-bold">FY</div>
+          <div className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${
+            (!isCollapsed || isHovered) 
+              ? 'opacity-100 w-[180px] ml-3' 
+              : 'opacity-0 w-0'
+          }`}>
             <h1 className="font-sans text-lg font-bold text-on-surface leading-tight">FrameYaad</h1>
             <p className="text-xs font-semibold text-secondary tracking-wider uppercase opacity-80">Admin Console</p>
           </div>
@@ -130,18 +152,41 @@ export const AdminLayout: React.FC = () => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all duration-200 ${
+                className={`flex items-center rounded-lg text-sm transition-all duration-200 relative ${
                   isActive
                     ? 'bg-secondary-container text-on-secondary-container font-semibold shadow-sm'
                     : 'text-secondary hover:bg-surface-container-high hover:text-on-surface'
+                } ${
+                  (!isCollapsed || isHovered) 
+                    ? 'px-4 py-2.5 gap-3' 
+                    : 'p-2.5 justify-center'
                 }`}
+                title={isCollapsed && !isHovered ? link.name : undefined}
               >
-                <Icon className={`w-[18px] h-[18px] ${isActive ? 'text-primary' : 'text-secondary'}`} />
-                <span>{link.name}</span>
+                <Icon className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? 'text-primary' : 'text-secondary'}`} />
+                <span className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${
+                  (!isCollapsed || isHovered) 
+                    ? 'opacity-100 w-[150px]' 
+                    : 'opacity-0 w-0'
+                }`}>
+                  {link.name}
+                </span>
                 {link.name === 'Notifications' && unreadCount > 0 && (
-                  <span className="ml-auto w-5 h-5 bg-error text-on-error text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {unreadCount}
-                  </span>
+                  <div className="flex items-center ml-auto">
+                    {/* Pulsing dot shown only when collapsed and NOT hovered */}
+                    <span className={`w-2 h-2 bg-error rounded-full animate-pulse flex-shrink-0 ${
+                      (isCollapsed && !isHovered) ? 'block' : 'hidden'
+                    }`} />
+                    
+                    {/* Badge count shown when expanded or when collapsed but hovered */}
+                    <span className={`bg-error text-on-error text-[10px] font-bold rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
+                      (isCollapsed && !isHovered) 
+                        ? 'opacity-0 scale-0 w-0 h-0 ml-0' 
+                        : 'w-5 h-5 ml-auto opacity-100 scale-100'
+                    }`}>
+                      {unreadCount}
+                    </span>
+                  </div>
                 )}
               </Link>
             );
@@ -150,20 +195,36 @@ export const AdminLayout: React.FC = () => {
 
         {/* User Card bottom */}
         {user && (
-          <div className="mt-auto px-4 pt-4 border-t border-outline-variant">
-            <div className="flex items-center justify-between">
-              <Link to="/admin/profile" className="flex items-center gap-3 py-1 group">
-                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold border border-outline-variant group-hover:ring-2 group-hover:ring-primary transition-all duration-200">
+          <div className={`mt-auto border-t border-outline-variant flex-shrink-0 transition-all duration-300 ${
+            (!isCollapsed || isHovered) 
+              ? 'px-4 pt-4' 
+              : 'pt-4 px-3'
+          }`}>
+            <div className={`flex items-center justify-between transition-all duration-300 ${
+              (!isCollapsed || isHovered) 
+                ? 'w-full flex-row gap-0' 
+                : 'flex-col gap-3'
+            }`}>
+              <Link 
+                to="/admin/profile" 
+                className="flex items-center gap-3 py-1 group"
+                title={isCollapsed && !isHovered ? `${user.name} (${user.role})` : undefined}
+              >
+                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex-shrink-0 flex items-center justify-center font-bold border border-outline-variant group-hover:ring-2 group-hover:ring-primary transition-all duration-200">
                   {avatarInitial}
                 </div>
-                <div className="text-left max-w-[120px]">
+                <div className={`text-left transition-all duration-300 overflow-hidden whitespace-nowrap ${
+                  (!isCollapsed || isHovered) 
+                    ? 'opacity-100 w-[120px] ml-3' 
+                    : 'opacity-0 w-0'
+                }`}>
                   <p className="text-sm font-semibold text-on-surface truncate leading-tight group-hover:text-primary">{user.name}</p>
                   <p className="text-[11px] text-on-surface-variant truncate mt-0.5">{user.role}</p>
                 </div>
               </Link>
               <button 
                 onClick={handleLogout}
-                className="p-1.5 hover:bg-error/10 hover:text-error text-on-surface-variant rounded-lg transition-colors"
+                className="p-1.5 hover:bg-error/10 hover:text-error text-on-surface-variant rounded-lg transition-colors flex-shrink-0"
                 title="Log Out"
               >
                 <LogOut className="w-4 h-4" />
@@ -252,20 +313,22 @@ export const AdminLayout: React.FC = () => {
       {/* ------------------------------------------------------------- */}
       {/* MAIN VIEWPORT WRAPPER */}
       {/* ------------------------------------------------------------- */}
-      <div className="flex-1 flex flex-col md:ml-sidebar-width w-full max-w-full min-h-screen">
+      <div className={`flex-1 flex flex-col w-full max-w-full min-h-screen transition-all duration-300 ${
+        isCollapsed ? 'md:ml-[72px]' : 'md:ml-[280px]'
+      }`}>
         
         {/* Sticky Header */}
-        <header className="h-topbar-height sticky top-0 z-40 bg-surface-container-lowest border-b border-outline-variant shadow-sm flex items-center justify-between px-margin-mobile md:px-margin-desktop transition-all">
+        <header className="h-topbar-height sticky top-0 z-40 bg-surface-container-lowest border-b border-outline-variant shadow-sm flex items-center justify-between px-margin-desktop transition-all">
           
           {/* Mobile hamburger menu & logo */}
-          <div className="md:hidden flex items-center gap-2 min-w-0">
+          <div className="md:hidden flex items-center gap-3">
             <button 
               onClick={() => setMobileMenuOpen(true)}
-              className="p-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-all scale-95 duration-100 flex-shrink-0"
+              className="p-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-all scale-95 duration-100"
             >
               <Menu className="w-5 h-5" />
             </button>
-            <span className="font-sans text-md font-bold text-on-surface truncate">FrameYard</span>
+            <span className="font-sans text-md font-bold text-on-surface">FrameYard</span>
           </div>
 
           {/* Breadcrumbs (Desktop) */}
@@ -274,7 +337,7 @@ export const AdminLayout: React.FC = () => {
           </div>
 
           {/* Search, Notifications & Actions */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-4">
             
             {/* Search (Desktop) */}
             <div className="hidden lg:flex items-center bg-surface px-3 py-1.5 rounded-full border border-outline-variant focus-within:border-primary focus-within:bg-surface-container-lowest transition-colors w-64">
@@ -291,30 +354,54 @@ export const AdminLayout: React.FC = () => {
               />
             </div>
 
-            {/* Search toggle (Mobile / Tablet) */}
-            <button
-              onClick={() => setMobileSearchOpen((prev) => !prev)}
-              className="lg:hidden w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-all"
-              title="Search"
-              aria-label="Toggle search"
-            >
-              {mobileSearchOpen ? <X className="w-[18px] h-[18px]" /> : <Search className="w-[18px] h-[18px]" />}
-            </button>
+            {/* Notification drop */}
+            <div className="relative">
+              <button 
+                onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
+                className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-all relative"
+              >
+                <Bell className="w-[18px] h-[18px]" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-error text-on-error text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-surface-container-lowest shadow-sm">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
 
-            {/* Notification icon - navigates to notifications page */}
-            <Link
-              to="/admin/notifications"
-              className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-all relative"
-              title="Notifications"
-              aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
-            >
-              <Bell className="w-[18px] h-[18px]" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-error text-on-error text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-surface-container-lowest">
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
+              {notifDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setNotifDropdownOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl z-50 overflow-hidden transform origin-top-right">
+                    <div className="p-3 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+                      <span className="text-xs font-bold text-on-surface">Recent Notifications</span>
+                      <Link to="/admin/notifications" className="text-[11px] text-primary hover:underline">View All</Link>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto divide-y divide-outline-variant/30 custom-scrollbar">
+                      {notifications.length === 0 ? (
+                        <div className="p-4 text-center text-xs text-on-surface-variant">No alerts.</div>
+                      ) : (
+                        notifications.slice(0, 4).map((notif) => (
+                          <div 
+                            key={notif.id} 
+                            onClick={() => {
+                              toggleNotificationRead(notif.id);
+                              setNotifDropdownOpen(false);
+                            }}
+                            className={`p-3 text-left hover:bg-surface transition-colors cursor-pointer ${!notif.read ? 'bg-primary/5' : ''}`}
+                          >
+                            <p className="text-xs font-semibold text-on-surface">{notif.title}</p>
+                            <p className="text-[11px] text-on-surface-variant mt-0.5 line-clamp-2">{notif.message}</p>
+                            <span className="text-[9px] text-on-surface-variant/60 mt-1 block">
+                              {new Date(notif.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>
               )}
-            </Link>
+            </div>
 
             <button className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-all">
               <HelpCircle className="w-[18px] h-[18px]" />
@@ -331,27 +418,6 @@ export const AdminLayout: React.FC = () => {
 
           </div>
         </header>
-
-        {/* Expandable Search Bar (Mobile / Tablet) */}
-        {mobileSearchOpen && (
-          <div className="lg:hidden sticky top-topbar-height z-30 bg-surface-container-lowest border-b border-outline-variant px-margin-mobile py-3 shadow-sm animate-fade-in">
-            <div className="flex items-center bg-surface px-3 py-2 rounded-full border border-outline-variant focus-within:border-primary focus-within:bg-surface-container-lowest transition-colors">
-              <Search className="w-4 h-4 text-outline-variant mr-2 flex-shrink-0" />
-              <input
-                autoFocus
-                className="bg-transparent border-none focus:ring-0 text-sm text-on-surface w-full p-0 placeholder-on-surface-variant/60 focus:outline-none"
-                placeholder="Search orders, customers..."
-                type="text"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    void handleGlobalSearch(e.currentTarget.value);
-                    setMobileSearchOpen(false);
-                  }
-                }}
-              />
-            </div>
-          </div>
-        )}
 
         {/* Viewport content */}
         <main className="flex-1 p-margin-mobile md:p-margin-desktop bg-surface w-full max-w-container-max mx-auto">

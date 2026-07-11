@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useCustomers } from '../../hooks/useCustomers';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { DataTable } from '../../components/tables/DataTable';
 import Badge from '../../components/ui/Badge';
-import Modal from '../../components/ui/Modal';
-import { Search, Download, Mail, Phone, ShoppingBag, MapPin, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
+import { Search, Download,Mail, Phone, ShoppingBag, MapPin, CheckCircle, XCircle } from 'lucide-react';
 import { Customer } from '../../types';
-import { showError, showSuccess } from '../../utils/toast';
 
 
 
@@ -32,30 +30,13 @@ const getTotalSpent = (customer: Customer) =>
 
 export const CustomersPage: React.FC = () => {
  const {  customers,  loading, fetchCustomers} = useCustomers(false);
-  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const PAGE_SIZE = 10;
   useEffect(() => {
   fetchCustomers(currentPage, PAGE_SIZE);}, [currentPage, fetchCustomers]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
-
-  const openCustomerDetails = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setDetailsModalOpen(true);
-  };
-
-  const closeCustomerDetails = () => {
-    setDetailsModalOpen(false);
-    setSelectedCustomer(null);
-  };
   const exportCustomerReport = () => {
-    if (customers.length === 0) {
-      showError('No customers to export');
-      return;
-    }
 
   const rows = customers.flatMap((customer) => {
 
@@ -137,7 +118,6 @@ export const CustomersPage: React.FC = () => {
   document.body.removeChild(link);
 
   window.URL.revokeObjectURL(url);
-  showSuccess('Customers exported successfully');
 };
 
   const filteredCustomers = customers.filter(
@@ -310,48 +290,32 @@ export const CustomersPage: React.FC = () => {
     const status = getCustomerStatus(customer);
     const totalSpent = getTotalSpent(customer);
     const hasOrders = customer.orders.length > 0;
-    const location = [customer.cityName, customer.stateName, customer.countryName]
-      .filter(Boolean).join(', ') || '—';
 
     return (
-      <div
-        key={customer.id}
-        className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 shadow-sm flex flex-col gap-3 cursor-pointer active:bg-surface-container-low transition-colors"
-        onClick={() => openCustomerDetails(customer)}
-      >
+      <div key={customer.id} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 shadow-sm flex flex-col gap-3">
         {/* Header */}
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/30 to-secondary/30 text-primary flex items-center justify-center font-bold uppercase flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/30 to-secondary/30 text-primary flex items-center justify-center font-bold uppercase">
               {customer.name.charAt(0)}
             </div>
-            <div className="min-w-0">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openCustomerDetails(customer);
-                }}
-                className="font-semibold text-sm text-primary hover:underline text-left truncate block w-full"
-              >
-                {customer.name}
-              </button>
+            <div>
+              <h4 className="font-semibold text-sm text-on-surface">{customer.name}</h4>
               <Badge type={getStatusBadgeType(status) as any} className="mt-1 text-[10px]">
                 {status === 'new' ? '🌱 New' : status}
               </Badge>
             </div>
           </div>
           {customer.isEmailVerified
-            ? <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
-            : <XCircle className="w-4 h-4 text-error flex-shrink-0" />
+            ? <CheckCircle className="w-4 h-4 text-success" />
+            : <XCircle className="w-4 h-4 text-error" />
           }
         </div>
 
         {/* Contact */}
         <div className="flex flex-col gap-1 text-xs text-on-surface-variant">
-          <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5 flex-shrink-0" /><span className="truncate">{customer.email}</span></div>
-          <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 flex-shrink-0" />{customer.phoneNumber || '—'}</div>
-          <div className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 flex-shrink-0" /><span className="truncate">{location}</span></div>
+          <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" />{customer.email}</div>
+          <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" />{customer.phoneNumber || '—'}</div>
         </div>
 
         {/* Stats */}
@@ -370,7 +334,7 @@ export const CustomersPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Orders preview */}
+        {/* Orders */}
         <div className="pt-2 border-t border-outline-variant/50">
           <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Orders</p>
           {hasOrders ? (
@@ -390,12 +354,6 @@ export const CustomersPage: React.FC = () => {
           ) : (
             <p className="text-[11px] text-on-surface-variant italic">🖼️ No frames ordered yet</p>
           )}
-        </div>
-
-        <div className="flex items-center justify-end pt-1">
-          <span className="text-xs font-semibold text-primary flex items-center gap-1">
-            View Details <ArrowRight className="w-3.5 h-3.5" />
-          </span>
         </div>
       </div>
     );
@@ -491,35 +449,30 @@ const growthPercentage =
       </div>
 
       {/* Search Bar */}
-      <div className="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl shadow-sm flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
-        <div className="relative flex-1 w-full">
+      <div className="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl shadow-sm flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant w-[18px] h-[18px]" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by name, email or phone..."
-            className="w-full pl-9 pr-4 py-2.5 border border-outline-variant rounded-lg text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            className="w-full pl-9 pr-4 py-2 border border-outline-variant rounded-lg text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           />
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-semibold text-secondary hover:text-on-surface hover:bg-surface rounded-lg transition-colors"
-            >
-              Clear
-            </button>
-          )}
+        {searchTerm && (
           <button
-            onClick={exportCustomerReport}
-            className="flex-1 sm:flex-none px-4 py-2.5 border border-outline-variant rounded-lg text-sm font-semibold hover:bg-surface transition-colors flex items-center justify-center gap-1.5"
+            onClick={() => setSearchTerm('')}
+            className="text-sm font-semibold text-secondary hover:text-on-surface transition-colors"
           >
+            Clear
+          </button>
+        )}
+  <button onClick={exportCustomerReport} className="px-4 py-2 border border-outline-variant rounded-lg text-sm font-semibold hover:bg-surface transition-colors flex items-center gap-1.5">
             <Download className="w-4 h-4" />
             <span>Export</span>
           </button>
-        </div>
-        <span className="text-xs text-on-surface-variant text-center sm:text-right sm:ml-auto">
+        <span className="ml-auto text-xs text-on-surface-variant hidden md:block">
           {filteredCustomers.length} of {totalCustomers} customers
         </span>
       </div>
@@ -537,155 +490,32 @@ const growthPercentage =
             : "No customers have registered yet. Share your store link to get started!"
         }
       />
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6 p-4 border border-outline-variant rounded-xl bg-surface-container-lowest">
-        <button
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className="w-full sm:w-auto px-4 py-2.5 border border-outline-variant rounded-lg text-sm font-semibold disabled:opacity-50 hover:bg-surface transition-colors"
-        >
-          Previous
-        </button>
-        <span className="text-sm font-medium text-on-surface-variant">
-          Page <span className="font-bold text-on-surface">{currentPage}</span>
-        </span>
-        <button
-          onClick={() => setCurrentPage((prev) => prev + 1)}
-          className="w-full sm:w-auto px-4 py-2.5 border border-outline-variant rounded-lg text-sm font-semibold hover:bg-surface transition-colors"
-        >
-          Next
-        </button>
-      </div>
+      <div className="flex items-center justify-center gap-3 mt-6">
+  <button
+    onClick={() =>
+      setCurrentPage((prev) =>
+        Math.max(prev - 1, 1)
+      )
+    }
+    disabled={currentPage === 1}
+    className="px-4 py-2 border border-outline-variant rounded-lg disabled:opacity-50"
+  >
+    Previous
+  </button>
 
-      {/* Mobile Customer Details Modal */}
-      <Modal
-        isOpen={detailsModalOpen}
-        onClose={closeCustomerDetails}
-        title={selectedCustomer ? selectedCustomer.name : 'Customer Details'}
-        size="lg"
-        footer={
-          selectedCustomer ? (
-            <>
-              <button
-                type="button"
-                onClick={closeCustomerDetails}
-                className="px-4 py-2 border border-outline-variant rounded-lg text-xs font-semibold hover:bg-surface"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  closeCustomerDetails();
-                  navigate(`/admin/customers/${selectedCustomer.id}`);
-                }}
-                className="px-4 py-2 bg-primary text-on-primary rounded-lg text-xs font-semibold hover:bg-primary/95"
-              >
-                View Full Profile
-              </button>
-            </>
-          ) : undefined
-        }
-      >
-        {selectedCustomer && (
-          <div className="space-y-5">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/30 to-secondary/30 text-primary flex items-center justify-center font-bold text-xl uppercase flex-shrink-0">
-                {selectedCustomer.name.charAt(0)}
-              </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h4 className="text-lg font-bold text-on-surface">{selectedCustomer.name}</h4>
-                  <Badge type={getStatusBadgeType(getCustomerStatus(selectedCustomer)) as any}>
-                    {getCustomerStatus(selectedCustomer)}
-                  </Badge>
-                </div>
-                <p className="text-xs text-on-surface-variant mt-1">
-                  ID: {selectedCustomer.id.slice(0, 8)}…
-                </p>
-              </div>
-            </div>
+  <span className="text-sm font-medium">
+    Page {currentPage}
+  </span>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="rounded-xl border border-outline-variant bg-surface p-4">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-secondary">
-                  <Mail className="h-3.5 w-3.5" />
-                  Email
-                </div>
-                <p className="mt-2 break-words text-sm font-semibold text-on-surface">{selectedCustomer.email}</p>
-                <p className="mt-1 text-xs text-on-surface-variant">
-                  {selectedCustomer.isEmailVerified ? 'Verified' : 'Not verified'}
-                </p>
-              </div>
-              <div className="rounded-xl border border-outline-variant bg-surface p-4">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-secondary">
-                  <Phone className="h-3.5 w-3.5" />
-                  Phone
-                </div>
-                <p className="mt-2 text-sm font-semibold text-on-surface">{selectedCustomer.phoneNumber || '—'}</p>
-              </div>
-              <div className="rounded-xl border border-outline-variant bg-surface p-4 sm:col-span-2">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-secondary">
-                  <MapPin className="h-3.5 w-3.5" />
-                  Address
-                </div>
-                <p className="mt-2 text-sm font-semibold text-on-surface">
-                  {[selectedCustomer.addressLine, selectedCustomer.cityName, selectedCustomer.stateName, selectedCustomer.countryName, selectedCustomer.postalCode]
-                    .filter(Boolean).join(', ') || 'Not available'}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-xl border border-outline-variant bg-surface p-3 text-center">
-                <p className="text-[10px] uppercase tracking-wider text-on-surface-variant">Orders</p>
-                <p className="mt-1 text-lg font-bold text-on-surface">{selectedCustomer.orders.length}</p>
-              </div>
-              <div className="rounded-xl border border-outline-variant bg-surface p-3 text-center">
-                <p className="text-[10px] uppercase tracking-wider text-on-surface-variant">Total Spent</p>
-                <p className="mt-1 text-lg font-bold text-primary">
-                  {getTotalSpent(selectedCustomer) > 0 ? `₹${getTotalSpent(selectedCustomer).toFixed(2)}` : '—'}
-                </p>
-              </div>
-              <div className="rounded-xl border border-outline-variant bg-surface p-3 text-center">
-                <p className="text-[10px] uppercase tracking-wider text-on-surface-variant">Joined</p>
-                <p className="mt-1 text-sm font-bold text-on-surface">
-                  {new Date(selectedCustomer.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <ShoppingBag className="w-4 h-4 text-primary" />
-                <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface">Order History</h4>
-              </div>
-              {selectedCustomer.orders.length > 0 ? (
-                <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
-                  {selectedCustomer.orders.map((order) => (
-                    <div
-                      key={order.id}
-                      className="flex items-center justify-between gap-3 bg-surface border border-outline-variant rounded-lg px-3 py-2.5 text-xs"
-                    >
-                      <span className="font-mono font-semibold text-primary">{formatOrderId(order.id)}</span>
-                      <span className={`font-medium capitalize ${
-                        order.orderStatus === 'DELIVERED' ? 'text-success' :
-                        order.orderStatus === 'CANCELLED' ? 'text-error' :
-                        order.orderStatus === 'SHIPPED' ? 'text-primary' :
-                        'text-on-surface-variant'
-                      }`}>
-                        {order.orderStatus.toLowerCase()}
-                      </span>
-                      <span className="font-semibold text-on-surface">₹{Number(order.totalAmount).toFixed(2)}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-on-surface-variant italic">No orders placed yet.</p>
-              )}
-            </div>
-          </div>
-        )}
-      </Modal>
+  <button
+    onClick={() =>
+      setCurrentPage((prev) => prev + 1)
+    }
+    className="px-4 py-2 border border-outline-variant rounded-lg"
+  >
+    Next
+  </button>
+</div>
     </div>
   );
   

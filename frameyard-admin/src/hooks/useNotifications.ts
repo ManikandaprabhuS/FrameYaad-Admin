@@ -11,8 +11,16 @@ export const useNotifications = (autoFetch = false) => {
   const removeNotification = useNotificationStore((state) => state.removeNotification);
 
   useEffect(() => {
-    if (autoFetch && notifications.length === 0) {
-      fetchNotifications();
+    if (autoFetch) {
+      if (notifications.length === 0) {
+        fetchNotifications(false);
+      }
+
+      const interval = setInterval(() => {
+        fetchNotifications(true);
+      }, 10000);
+
+      return () => clearInterval(interval);
     }
   }, [autoFetch, fetchNotifications, notifications.length]);
 

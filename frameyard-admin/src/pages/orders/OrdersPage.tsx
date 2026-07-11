@@ -3,10 +3,9 @@ import { useLocation } from 'react-router-dom';
 import useOrders from '../../hooks/useOrders';
 import DataTable from '../../components/tables/DataTable';
 import Modal from '../../components/ui/Modal';
-import { Search, Calendar, ArrowRight, Eye, Mail, Phone, ShoppingCart, Download, UserRound, MapPin } from 'lucide-react';
+import { Search, Calendar, ArrowRight, Eye, Mail, Phone, ShoppingCart, Download } from 'lucide-react';
 import { Order, OrderStatus } from '../../types';
 import { orderService } from '../../services/order.service';
-import { showError, showSuccess } from '../../utils/toast';
 
 const getSearchTermFromQueryString = (search: string) => {
   const params = new URLSearchParams(search);
@@ -67,25 +66,20 @@ export const OrdersPage: React.FC = () => {
   };
 
   const exportOrdersReport = async () => {
-    try {
-      const blob = await orderService.exportOrders({
-        search: searchTerm.trim() || undefined,
-        status: statusFilter === 'all' ? undefined : statusFilter,
-        dateFilter: dateFilter === 'all' ? undefined : dateFilter,
-      });
+    const blob = await orderService.exportOrders({
+      search: searchTerm.trim() || undefined,
+      status: statusFilter === 'all' ? undefined : statusFilter,
+      dateFilter: dateFilter === 'all' ? undefined : dateFilter,
+    });
 
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `orders-report-${Date.now()}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      showSuccess('Orders exported successfully');
-    } catch (error: any) {
-      showError(error?.response?.data?.message || 'Failed to export orders');
-    }
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `orders-report-${Date.now()}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
   };
 
   const getCustomerName = (order: Order) => order.user?.name || 'Unknown Customer';
@@ -430,93 +424,71 @@ export const OrdersPage: React.FC = () => {
       <Modal
         isOpen={detailsModalOpen}
         onClose={() => setDetailsModalOpen(false)}
-        title={`Order ${selectedOrder?.orderNumber ?? ''}`}
-        size="lg"
+        title={`Order Details: ${selectedOrder?.orderNumber}`}
       >
         {selectedOrder && (
           <div className="space-y-6">
-            {/* Summary header */}
-            <div className="flex flex-col gap-4 rounded-xl border border-outline-variant bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <ShoppingCart className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-on-surface">{selectedOrder.orderNumber}</p>
-                  <p className="mt-0.5 flex items-center gap-1.5 text-xs text-on-surface-variant">
-                    <Calendar className="h-3.5 w-3.5" />
-                    {new Date(selectedOrder.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}
-                  </p>
-                </div>
-              </div>
-              <span
-                className={`self-start rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${getDropdownStyles(
-                  selectedOrder.orderStatus
-                )}`}
-              >
-                {selectedOrder.orderStatus}
-              </span>
-            </div>
-
-            {/* Customer information */}
-            <div>
+            <div className="rounded-xl border border-outline-variant bg-surface p-4">
               <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-on-surface-variant">Customer Information</h4>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
-                  <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-secondary">
-                    <UserRound className="h-3.5 w-3.5" /> Name
-                  </span>
-                  <span className="mt-1.5 block break-words font-semibold text-on-surface">{getCustomerName(selectedOrder)}</span>
+              <div className="space-y-4">
+                <div className="min-w-0">
+                  <span className="block text-xs text-on-surface-variant/70">Name</span>
+                  <span className="mt-0.5 block font-semibold text-on-surface">{getCustomerName(selectedOrder)}</span>
                 </div>
-                <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
-                  <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-secondary">
-                    <Phone className="h-3.5 w-3.5" /> Phone
+                <div className="min-w-0">
+                  <span className="block text-xs text-on-surface-variant/70">Email Address</span>
+                  <span className="mt-0.5 flex min-w-0 items-start gap-1.5 break-words font-semibold leading-snug text-on-surface">
+                    <Mail className="h-3.5 w-3.5 text-on-surface-variant" />
+                    {getCustomerEmail(selectedOrder)}
                   </span>
-                  <span className="mt-1.5 block break-words font-semibold text-on-surface">{getCustomerPhone(selectedOrder)}</span>
                 </div>
-                <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 sm:col-span-2">
-                  <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-secondary">
-                    <Mail className="h-3.5 w-3.5" /> Email
+                <div className="min-w-0">
+                  <span className="block text-xs text-on-surface-variant/70">Phone Number</span>
+                  <span className="mt-0.5 flex min-w-0 items-start gap-1.5 break-words font-semibold leading-snug text-on-surface">
+                    <Phone className="h-3.5 w-3.5 text-on-surface-variant" />
+                    {getCustomerPhone(selectedOrder)}
                   </span>
-                  <span className="mt-1.5 block break-words font-semibold text-on-surface">{getCustomerEmail(selectedOrder)}</span>
                 </div>
-                <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 sm:col-span-2">
-                  <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-secondary">
-                    <MapPin className="h-3.5 w-3.5" /> Shipping Address
+                <div className="min-w-0">
+                  <span className="block text-xs text-on-surface-variant/70">Address</span>
+                  <span className="mt-0.5 block break-words font-semibold leading-snug text-on-surface">
+                    {getCustomerAddress(selectedOrder)}
                   </span>
-                  <span className="mt-1.5 block break-words font-semibold leading-snug text-on-surface">{getCustomerAddress(selectedOrder)}</span>
                 </div>
               </div>
             </div>
 
-            {/* Items purchased */}
             <div>
-              <div className="mb-3 flex items-center justify-between">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Items Purchased</h4>
-                <span className="text-xs font-medium text-on-surface-variant">{getItemsCount(selectedOrder)} item(s)</span>
-              </div>
+              <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-on-surface-variant">Items Purchased</h4>
               <div className="divide-y divide-outline-variant/40 overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
                 {selectedOrder.orderItems.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between gap-3 p-4">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-on-surface">{item.productName}</p>
-                      <p className="mt-0.5 text-xs text-on-surface-variant">{getVariantName(item)}</p>
-                      <p className="mt-0.5 text-[11px] text-on-surface-variant">₹{item.price.toFixed(2)} × {item.quantity}</p>
+                  <div key={index} className="flex items-center justify-between p-4">
+                    <div>
+                      <p className="text-sm font-semibold text-on-surface">{item.productName}</p>
+                      <p className="mt-0.5 text-xs text-on-surface-variant">Variant: {getVariantName(item)}</p>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-bold text-on-surface">₹{(item.price * item.quantity).toFixed(2)}</p>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-on-surface">₹{item.price.toFixed(2)}</p>
+                      <p className="mt-0.5 text-xs text-on-surface-variant">Qty: {item.quantity}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Total */}
-            <div className="flex items-center justify-between rounded-xl bg-primary/5 border border-primary/20 px-4 py-3.5">
-              <span className="text-sm font-semibold text-on-surface">Total Amount</span>
-              <span className="text-xl font-bold text-primary">
-                ₹{Number(selectedOrder.totalAmount).toFixed(2)}
-              </span>
+            <div className="flex items-center justify-between border-t border-outline-variant pt-4">
+              <div>
+                <span className="block text-xs text-on-surface-variant">Order Date</span>
+                <span className="mt-0.5 block text-sm font-medium text-on-surface">
+                  {new Date(selectedOrder.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="block text-xs text-on-surface-variant">Total Price</span>
+                <span className="mt-0.5 block text-lg font-bold text-primary">
+                  ₹{Number(selectedOrder.totalAmount).toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
         )}
