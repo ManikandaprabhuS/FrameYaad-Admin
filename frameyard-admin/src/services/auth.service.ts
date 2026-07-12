@@ -7,7 +7,10 @@ export const authService = {
     email,   
     password,
   });
-  return response.data;
+
+console.log("Login response:", response.data);
+console.log("Status:", response.status);
+return response.data;
 },
 
  me: async (): Promise<User> => {
