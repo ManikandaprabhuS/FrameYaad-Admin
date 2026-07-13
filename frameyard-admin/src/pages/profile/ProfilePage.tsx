@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import useAuth from '../../hooks/useAuth';
 import { User, Mail, Shield, Save, Phone } from 'lucide-react';
+import { showError, showSuccess } from '../../utils/toast';
 
 const emptyProfileForm = {
   name: '',
@@ -36,17 +37,21 @@ export const ProfilePage: React.FC = () => {
 
   const handleUpdate = async () => {
     const success = await updateProfile(formData);
-    alert(success ? 'Profile updated successfully' : 'Failed to update profile');
+    if (success) {
+      showSuccess('Profile updated successfully');
+    } else {
+      showError('Failed to update profile');
+    }
   };
 
   const handlePasswordUpdate = async () => {
     if (passwordData.password.length < 8) {
-      alert('Password must be at least 8 characters');
+      showError('Password must be at least 8 characters');
       return;
     }
 
     if (passwordData.password !== passwordData.confirmPassword) {
-      alert('Passwords do not match');
+      showError('Passwords do not match');
       return;
     }
 
@@ -54,9 +59,9 @@ export const ProfilePage: React.FC = () => {
 
     if (success) {
       setPasswordData({ password: '', confirmPassword: '' });
-      alert('Password updated successfully');
+      showSuccess('Password updated successfully');
     } else {
-      alert('Failed to update password');
+      showError('Failed to update password');
     }
   };
 
