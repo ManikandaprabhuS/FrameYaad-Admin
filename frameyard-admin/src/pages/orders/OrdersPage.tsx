@@ -12,12 +12,19 @@ const getSearchTermFromQueryString = (search: string) => {
   return params.get('search')?.trim() || params.get('q')?.trim() || '';
 };
 
+const orderStatuses: OrderStatus[] = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+
+const getStatusFilterFromQueryString = (search: string): 'all' | OrderStatus => {
+  const status = new URLSearchParams(search).get('status')?.trim().toUpperCase();
+  return orderStatuses.includes(status as OrderStatus) ? (status as OrderStatus) : 'all';
+};
+
 export const OrdersPage: React.FC = () => {
   const location = useLocation();
   const { orders, loading, refreshing, fetchOrders, changeOrderStatus, pagination, summary } = useOrders();
   const [searchTerm, setSearchTerm] = useState(() => getSearchTermFromQueryString(location.search));
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(() => getSearchTermFromQueryString(location.search));
-  const [statusFilter, setStatusFilter] = useState<'all' | OrderStatus>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | OrderStatus>(() => getStatusFilterFromQueryString(location.search));
   const [dateFilter, setDateFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -28,8 +35,10 @@ export const OrdersPage: React.FC = () => {
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       const nextSearchTerm = getSearchTermFromQueryString(location.search);
+      const nextStatusFilter = getStatusFilterFromQueryString(location.search);
       setSearchTerm(nextSearchTerm);
       setDebouncedSearchTerm(nextSearchTerm);
+      setStatusFilter(nextStatusFilter);
       setCurrentPage(1);
     }, 0);
 

@@ -386,30 +386,30 @@ export const ProductDetailsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
-      <div className="flex items-center justify-between border-b border-outline-variant/60 pb-5">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-4 border-b border-outline-variant/60 pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           <button
             onClick={() => navigate('/admin/products')}
             className="p-2 border border-outline-variant rounded-xl hover:bg-surface-container-low transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div>
+          <div className="min-w-0">
             <nav className="flex items-center gap-1 text-[11px] text-on-surface-variant">
               <Link to="/admin/products" className="hover:text-primary">Products</Link>
               <span>&gt;</span>
               <span className="text-primary font-medium">{isNew ? 'New Product' : 'Edit Product'}</span>
             </nav>
-            <h2 className="text-2xl font-bold text-on-surface mt-0.5">
+            <h2 className="mt-0.5 truncate text-2xl font-bold text-on-surface">
               {isNew ? 'New Product' : name || 'Edit Product'}
             </h2>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center">
           <button
             type="button"
             onClick={() => navigate('/admin/products')}
-            className="px-5 py-2 border border-outline-variant rounded-xl text-sm font-semibold hover:bg-surface-container-low transition-colors h-10"
+            className="h-10 w-full rounded-xl border border-outline-variant px-5 py-2 text-sm font-semibold transition-colors hover:bg-surface-container-low sm:w-auto"
           >
             Discard
           </button>
@@ -417,7 +417,7 @@ export const ProductDetailsPage: React.FC = () => {
             type="button"
             onClick={handleSave}
             disabled={isUploadingImages || isSaving}
-            className="px-5 py-2 bg-primary text-on-primary rounded-xl text-sm font-semibold hover:bg-primary/95 transition-all shadow-sm h-10 hover:scale-[1.01] disabled:opacity-60 disabled:cursor-not-allowed"
+            className="h-10 w-full rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-on-primary shadow-sm transition-all hover:scale-[1.01] hover:bg-primary/95 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
             {isSaving ? 'Saving...' : 'Save Product'}
           </button>
