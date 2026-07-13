@@ -42,10 +42,15 @@ export const useAuthStore = create<AuthState>((set) => ({
   return false;
 }
 const user = response.user;
+const token = response.token ?? null;
+
+if (token) {
+  localStorage.setItem("fy_auth_token", token);
+}
 
     set({
       user,
-      token: null,
+      token,
       isAuthenticated: true,
       loading: false,
     });
@@ -96,10 +101,11 @@ const user = response.user;
   });
   try {
     const user =await authService.me();
+   const token = localStorage.getItem("fy_auth_token");
 
    set({
   user,
-  token: null,
+  token,
   isAuthenticated: true,
   loading: false,
 });
@@ -112,6 +118,7 @@ const user = response.user;
       isAuthenticated: false,
       loading: false,
     });
+    localStorage.removeItem("fy_auth_token");
   }
 },
 
