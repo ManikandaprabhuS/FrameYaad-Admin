@@ -166,51 +166,40 @@ export const ProductDetailsPage: React.FC = () => {
     setIsUploadingImages(true);
 
     try {
-      await Promise.all(
-        tempEntries.map(async (entry, index) => {
-          try {
-            const uploadedUrls = await uploadProductImages([filesToUpload[index]]);
-            const finalUrl = uploadedUrls[0];
+      const uploadedUrls = await uploadProductImages(filesToUpload);
 
-            if (!finalUrl) {
-              throw new Error('Upload completed without returning an image URL.');
+      if (uploadedUrls.length !== tempEntries.length) {
+        throw new Error('Upload completed without returning all image URLs.');
+      }
+
+      setImages((prev) =>
+        normalizeImageOrder(
+          prev.map((image) => {
+            const uploadedIndex = tempEntries.findIndex((entry) => entry.id === image.id);
+
+            if (uploadedIndex === -1) {
+              return image;
             }
 
-            setImages((prev) =>
-              normalizeImageOrder(
-                prev.map((image) =>
-                  image.id === entry.id
-                    ? {
-                        ...image,
-                        imageUrl: finalUrl,
-                        previewUrl: finalUrl,
-                        isUploading: false,
-                      }
-                    : image
-                )
-              )
-            );
-
-            if (entry.previewUrl?.startsWith('blob:')) {
-              URL.revokeObjectURL(entry.previewUrl);
-            }
-          } catch (error: unknown) {
-            setImages((prev) =>
-              normalizeImageOrder(prev.filter((image) => image.id !== entry.id))
-            );
-            const uploadError = error as {
-              response?: { data?: { message?: string } };
-              message?: string;
+            return {
+              ...image,
+              imageUrl: uploadedUrls[uploadedIndex],
+              previewUrl: uploadedUrls[uploadedIndex],
+              isUploading: false,
             };
-            setImageError(
-              uploadError?.response?.data?.message ||
-                uploadError?.message ||
-                'Failed to upload images.'
-            );
-          }
-        })
+          })
+        )
       );
+
+      tempEntries.forEach((entry) => {
+        if (entry.previewUrl?.startsWith('blob:')) {
+          URL.revokeObjectURL(entry.previewUrl);
+        }
+      });
     } catch (error: unknown) {
+      setImages((prev) =>
+        normalizeImageOrder(prev.filter((image) => !tempEntries.some((entry) => entry.id === image.id)))
+      );
       const uploadError = error as {
         response?: { data?: { message?: string } };
         message?: string;

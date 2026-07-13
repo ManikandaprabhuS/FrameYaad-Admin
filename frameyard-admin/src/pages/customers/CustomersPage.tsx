@@ -300,7 +300,12 @@ export const CustomersPage: React.FC = () => {
               {customer.name.charAt(0)}
             </div>
             <div>
-              <h4 className="font-semibold text-sm text-on-surface">{customer.name}</h4>
+              <Link
+                to={`/admin/customers/${customer.id}`}
+                className="font-semibold text-sm text-primary hover:underline"
+              >
+                {customer.name}
+              </Link>
               <Badge type={getStatusBadgeType(status) as any} className="mt-1 text-[10px]">
                 {status === 'new' ? '🌱 New' : status}
               </Badge>
@@ -336,7 +341,15 @@ export const CustomersPage: React.FC = () => {
 
         {/* Orders */}
         <div className="pt-2 border-t border-outline-variant/50">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Orders</p>
+          <div className="mb-1.5 flex items-center justify-between gap-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Orders</p>
+            <Link
+              to={`/admin/customers/${customer.id}`}
+              className="text-[11px] font-semibold text-primary hover:underline"
+            >
+              View details
+            </Link>
+          </div>
           {hasOrders ? (
             <div className="flex flex-wrap gap-1.5">
               {customer.orders.slice(0, 3).map((order) => (

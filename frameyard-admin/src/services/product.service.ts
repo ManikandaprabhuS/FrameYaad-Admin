@@ -86,7 +86,7 @@ export const uploadProductImages = async (
       file
     );
   });
-  const response =await api.post("/products/uploadProductImages", formData,);
+  const response = await api.post("/products/uploadProductImages", formData);
   return response.data.images;
 };
 
