@@ -5,6 +5,7 @@ import Badge from '../../components/ui/Badge';
 import useAuth from '../../hooks/useAuth';
 import { employeeService } from '../../services/employee.service';
 import { Employee } from '../../types/employee.types';
+import { showError, showSuccess } from '../../utils/toast';
 
 type FormState = {
   name: string;
@@ -141,12 +142,24 @@ const EmployeesPage: React.FC = () => {
   const handleStatusToggle = async (employee: Employee) => {
     const confirmed = window.confirm(employee.isActive ? 'Deactivate this employee?' : 'Activate this employee?');
     if (!confirmed) return;
-    if (employee.isActive) {
-      await employeeService.deactivateEmployee(employee.id);
-    } else {
-      await employeeService.activateEmployee(employee.id);
+    setError(null);
+
+    try {
+      const updatedEmployee = employee.isActive
+        ? await employeeService.deactivateEmployee(employee.id)
+        : await employeeService.activateEmployee(employee.id);
+
+      setEmployees((currentEmployees) =>
+        currentEmployees.map((currentEmployee) =>
+          currentEmployee.id === employee.id ? updatedEmployee : currentEmployee
+        )
+      );
+      showSuccess(updatedEmployee.isActive ? 'Employee activated successfully' : 'Employee deactivated successfully');
+    } catch (err: any) {
+      const message = err.response?.data?.message || 'Failed to update employee status';
+      setError(message);
+      showError(message);
     }
-    await fetchEmployees();
   };
 
   const handleDelete = async (employee: Employee) => {
