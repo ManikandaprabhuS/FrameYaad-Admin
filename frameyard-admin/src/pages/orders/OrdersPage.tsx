@@ -229,7 +229,7 @@ export const OrdersPage: React.FC = () => {
                   setStatusFilter(event.target.value as 'all' | OrderStatus);
                   setCurrentPage(1);
                 }}
-                className="w-full cursor-pointer rounded-lg border border-outline-variant bg-surface px-3 py-2 text-xs text-on-surface outline-none focus:border-primary"
+                className="w-full cursor-pointer rounded-lg border border-outline-variant bg-surface px-3 py-2 text-center text-xs text-on-surface outline-none [text-align-last:center] focus:border-primary"
               >
                 <option value="all">All Statuses</option>
                 <option value="PENDING">Pending</option>
@@ -250,7 +250,7 @@ export const OrdersPage: React.FC = () => {
                     setDateFilter(event.target.value);
                     setCurrentPage(1);
                   }}
-                  className="h-10 w-full cursor-pointer rounded-lg border border-outline-variant bg-surface pl-10 pr-8 text-sm text-on-surface outline-none"
+                  className="h-10 w-full cursor-pointer rounded-lg border border-outline-variant bg-surface px-10 text-center text-sm text-on-surface outline-none [text-align-last:center]"
                 >
                   <option value="7">Last 7 Days</option>
                   <option value="30">Last 30 Days</option>

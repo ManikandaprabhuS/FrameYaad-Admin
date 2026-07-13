@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import useProducts from '../../hooks/useProducts';
 import useOrders from '../../hooks/useOrders';
@@ -11,9 +11,8 @@ import {
   Users, 
   Package, 
   ArrowRight,
-  TrendingUp,
-  AlertTriangle,
-  IndianRupee
+  IndianRupee,
+  Download
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -30,12 +29,60 @@ export const OverviewPage: React.FC = () => {
   const { products, fetchProducts, loading: loadingProducts } = useProducts(true);
   const { orders, fetchOrders, loading: loadingOrders } = useOrders(true);
   const { customers, fetchCustomers, loading: loadingCustomers } = useCustomers(true);
+  const today = new Date();
+  const [reportRange, setReportRange] = useState<'year' | 'month' | 'custom'>('month');
+  const [reportFromDate, setReportFromDate] = useState(
+    new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10)
+  );
+  const [reportToDate, setReportToDate] = useState(today.toISOString().slice(0, 10));
 
   useEffect(() => {
     fetchProducts();
-    fetchOrders();
+    fetchOrders({ page: 1, limit: 1000, dateFilter: 'all' });
     fetchCustomers();
   }, [fetchProducts, fetchOrders, fetchCustomers]);
+
+  const reportDateRange = useMemo(() => {
+    const now = new Date();
+
+    if (reportRange === 'year') {
+      return {
+        from: new Date(now.getFullYear(), 0, 1),
+        to: new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999),
+        label: `This Year (${now.getFullYear()})`,
+      };
+    }
+
+    if (reportRange === 'month') {
+      return {
+        from: new Date(now.getFullYear(), now.getMonth(), 1),
+        to: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999),
+        label: 'This Month',
+      };
+    }
+
+    const from = reportFromDate ? new Date(`${reportFromDate}T00:00:00`) : new Date(0);
+    const to = reportToDate ? new Date(`${reportToDate}T23:59:59.999`) : now;
+
+    return {
+      from,
+      to,
+      label: `${from.toLocaleDateString('en-IN')} - ${to.toLocaleDateString('en-IN')}`,
+    };
+  }, [reportFromDate, reportRange, reportToDate]);
+
+  const reportOrders = useMemo(
+    () =>
+      orders.filter((order) => {
+        const createdAt = new Date(order.createdAt);
+        return (
+          order.orderStatus !== 'CANCELLED' &&
+          createdAt >= reportDateRange.from &&
+          createdAt <= reportDateRange.to
+        );
+      }),
+    [orders, reportDateRange]
+  );
 
   const calculatedRevenue = orders.reduce(
     (sum, o) => (o.orderStatus !== 'CANCELLED' ? sum + Number(o.totalAmount || 0) : sum),
@@ -45,8 +92,7 @@ export const OverviewPage: React.FC = () => {
   const calculatedCustomers = customers.length;
   const calculatedProducts = products.filter((product) => product.isActive).length;
 
-  const revenueByDay = orders.reduce<Record<string, number>>((acc, order) => {
-    if (order.orderStatus === 'CANCELLED') return acc;
+  const revenueByDay = reportOrders.reduce<Record<string, number>>((acc, order) => {
     const day = new Date(order.createdAt).toLocaleDateString('en-US', {
       day: '2-digit',
       month: 'short',
@@ -57,7 +103,85 @@ export const OverviewPage: React.FC = () => {
 
   const chartData = Object.entries(revenueByDay)
     .map(([day, revenue]) => ({ day, revenue }))
-    .slice(-7);
+    .slice(-30);
+
+  const reportRevenue = reportOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
+
+  const downloadPdf = (filename: string, lines: string[]) => {
+    const escapePdfText = (value: string) =>
+      value.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+    const pageWidth = 595;
+    const pageHeight = 842;
+    const startX = 48;
+    let y = 780;
+    const contentLines: string[] = ['BT', '/F1 11 Tf', `${startX} ${y} Td`];
+
+    lines.forEach((line, index) => {
+      if (index > 0) {
+        y -= 18;
+        if (y < 56) {
+          return;
+        }
+        contentLines.push(`0 -18 Td`);
+      }
+      contentLines.push(`(${escapePdfText(line)}) Tj`);
+    });
+    contentLines.push('ET');
+
+    const stream = contentLines.join('\n');
+    const objects = [
+      '1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj',
+      '2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj',
+      `3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj`,
+      '4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj',
+      `5 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`,
+    ];
+
+    let pdf = '%PDF-1.4\n';
+    const offsets = [0];
+    objects.forEach((object) => {
+      offsets.push(pdf.length);
+      pdf += `${object}\n`;
+    });
+    const xrefOffset = pdf.length;
+    pdf += `xref\n0 ${objects.length + 1}\n`;
+    pdf += '0000000000 65535 f \n';
+    offsets.slice(1).forEach((offset) => {
+      pdf += `${offset.toString().padStart(10, '0')} 00000 n \n`;
+    });
+    pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+    const blob = new Blob([pdf], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadRevenueReport = () => {
+    const generatedAt = new Date().toLocaleString('en-IN');
+    const lines = [
+      'FrameYaad Revenue Report',
+      `Range: ${reportDateRange.label}`,
+      `Generated: ${generatedAt}`,
+      '',
+      `Total revenue: INR ${reportRevenue.toFixed(2)}`,
+      `Paid/active orders: ${reportOrders.length}`,
+      `Average order value: INR ${(reportOrders.length ? reportRevenue / reportOrders.length : 0).toFixed(2)}`,
+      '',
+      'Orders',
+      ...reportOrders.slice(0, 28).map((order) =>
+        `${new Date(order.createdAt).toLocaleDateString('en-IN')} | ${order.orderNumber} | ${order.user?.name || 'Unknown Customer'} | ${order.orderStatus} | INR ${Number(order.totalAmount).toFixed(2)}`
+      ),
+      ...(reportOrders.length > 28 ? [`+ ${reportOrders.length - 28} more orders not shown on this summary page`] : []),
+    ];
+
+    downloadPdf(`revenue-report-${new Date().toISOString().slice(0, 10)}.pdf`, lines);
+  };
 
   // Recent 4 orders
   const recentOrders = orders.slice(0, 4);
@@ -146,11 +270,47 @@ export const OverviewPage: React.FC = () => {
         
         {/* Revenue Line Chart */}
         <div className="lg:col-span-2 bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)] flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-sm font-bold text-on-surface uppercase tracking-wider">Revenue (Last 30 Days)</h3>
-            <button className="text-xs text-primary font-semibold hover:bg-surface-container px-3 py-1.5 rounded-lg border border-outline-variant transition-colors">
-              View Report
+          <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-on-surface uppercase tracking-wider">Revenue ({reportDateRange.label})</h3>
+              <p className="mt-1 text-xs text-on-surface-variant">
+                INR {reportRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} from {reportOrders.length} orders
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:flex-wrap xl:justify-end">
+              <select
+                value={reportRange}
+                onChange={(event) => setReportRange(event.target.value as 'year' | 'month' | 'custom')}
+                className="h-9 rounded-lg border border-outline-variant bg-surface px-3 text-center text-xs font-semibold text-on-surface outline-none [text-align-last:center]"
+              >
+                <option value="month">This Month</option>
+                <option value="year">This Year</option>
+                <option value="custom">Custom Range</option>
+              </select>
+              {reportRange === 'custom' && (
+                <>
+                  <input
+                    type="date"
+                    value={reportFromDate}
+                    onChange={(event) => setReportFromDate(event.target.value)}
+                    className="h-9 rounded-lg border border-outline-variant bg-surface px-3 text-xs text-on-surface outline-none"
+                  />
+                  <input
+                    type="date"
+                    value={reportToDate}
+                    onChange={(event) => setReportToDate(event.target.value)}
+                    className="h-9 rounded-lg border border-outline-variant bg-surface px-3 text-xs text-on-surface outline-none"
+                  />
+                </>
+              )}
+              <button
+                onClick={handleDownloadRevenueReport}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-outline-variant px-3 text-xs font-semibold text-primary transition-colors hover:bg-surface-container"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Report PDF
             </button>
+            </div>
           </div>
           
           <div className="w-full h-64 mt-auto">
