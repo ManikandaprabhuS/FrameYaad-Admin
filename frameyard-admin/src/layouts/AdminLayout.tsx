@@ -22,6 +22,7 @@ import {
 export const AdminLayout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -33,6 +34,7 @@ export const AdminLayout: React.FC = () => {
     const timeout = window.setTimeout(() => {
       setMobileMenuOpen(false);
       setNotifDropdownOpen(false);
+      setMobileSearchOpen(false);
     }, 0);
 
     return () => window.clearTimeout(timeout);
@@ -75,6 +77,11 @@ export const AdminLayout: React.FC = () => {
     }
 
     navigate(`/admin/orders?search=${encodeURIComponent(value)}`);
+  };
+
+  const submitGlobalSearch = async (value: string) => {
+    await handleGlobalSearch(value);
+    setMobileSearchOpen(false);
   };
 
   const navLinks = [
@@ -253,7 +260,8 @@ export const AdminLayout: React.FC = () => {
       <div className="flex-1 flex flex-col w-full max-w-full min-h-screen transition-all duration-300 md:ml-[72px]">
         
         {/* Sticky Header */}
-        <header className="h-topbar-height sticky top-0 z-40 bg-surface-container-lowest border-b border-outline-variant shadow-sm flex items-center justify-between px-margin-desktop transition-all">
+        <header className="sticky top-0 z-40 bg-surface-container-lowest border-b border-outline-variant shadow-sm transition-all">
+          <div className="h-topbar-height flex items-center justify-between px-margin-mobile md:px-margin-desktop">
           
           {/* Mobile hamburger menu & logo */}
           <div className="md:hidden flex items-center gap-3">
@@ -272,7 +280,7 @@ export const AdminLayout: React.FC = () => {
           </div>
 
           {/* Search, Notifications & Actions */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             
             {/* Search (Desktop) */}
             <div className="hidden lg:flex items-center bg-surface px-3 py-1.5 rounded-full border border-outline-variant focus-within:border-primary focus-within:bg-surface-container-lowest transition-colors w-64">
@@ -283,11 +291,19 @@ export const AdminLayout: React.FC = () => {
                 type="text"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    void handleGlobalSearch(e.currentTarget.value);
+                    void submitGlobalSearch(e.currentTarget.value);
                   }
                 }}
               />
             </div>
+
+            <button
+              onClick={() => setMobileSearchOpen((prev) => !prev)}
+              className="flex h-9 w-9 items-center justify-center rounded-full text-on-surface-variant transition-all hover:bg-surface-container lg:hidden"
+              title="Search"
+            >
+              <Search className="h-[18px] w-[18px]" />
+            </button>
 
             {/* Notification drop */}
             <div className="relative">
@@ -306,12 +322,12 @@ export const AdminLayout: React.FC = () => {
               {notifDropdownOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setNotifDropdownOpen(false)} />
-                  <div className="absolute right-0 top-full mt-2 w-80 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl z-50 overflow-hidden transform origin-top-right">
+                  <div className="fixed left-3 right-3 top-[calc(var(--spacing-topbar-height)+8px)] max-h-[70vh] bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl z-50 overflow-hidden md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-80 md:max-h-none transform origin-top-right">
                     <div className="p-3 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
                       <span className="text-xs font-bold text-on-surface">Recent Notifications</span>
                       <Link to="/admin/notifications" className="text-[11px] text-primary hover:underline">View All</Link>
                     </div>
-                    <div className="max-h-64 overflow-y-auto divide-y divide-outline-variant/30 custom-scrollbar">
+                    <div className="max-h-[calc(70vh-48px)] overflow-y-auto divide-y divide-outline-variant/30 custom-scrollbar md:max-h-64">
                       {notifications.length === 0 ? (
                         <div className="p-4 text-center text-xs text-on-surface-variant">No alerts.</div>
                       ) : (
@@ -352,6 +368,36 @@ export const AdminLayout: React.FC = () => {
             )}
 
           </div>
+          </div>
+
+          {mobileSearchOpen && (
+            <div className="border-t border-outline-variant bg-surface-container-lowest px-margin-mobile py-3 lg:hidden">
+              <div className="flex items-center rounded-xl border border-outline-variant bg-surface px-3 py-2 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10">
+                <Search className="mr-2 h-4 w-4 flex-shrink-0 text-outline-variant" />
+                <input
+                  autoFocus
+                  className="w-full border-none bg-transparent p-0 text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-0"
+                  placeholder="Search orders, customers..."
+                  type="search"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      void submitGlobalSearch(e.currentTarget.value);
+                    }
+                    if (e.key === 'Escape') {
+                      setMobileSearchOpen(false);
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => setMobileSearchOpen(false)}
+                  className="ml-2 rounded-lg p-1.5 text-on-surface-variant hover:bg-surface-container"
+                  title="Close search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </header>
 
         {/* Viewport content */}
