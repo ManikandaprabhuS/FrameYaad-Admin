@@ -12,6 +12,7 @@ interface AuthState {
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   updateProfile: (profileData: Partial<User>) => Promise<boolean>;
+  changePassword: (password: string) => Promise<boolean>;
   clearError: () => void;
 }
 
@@ -130,6 +131,18 @@ if (token) {
       return true;
     } catch (err: any) {
       set({ error: err.response?.data?.message || 'Update failed', loading: false });
+      return false;
+    }
+  },
+
+  changePassword: async (password) => {
+    set({ loading: true, error: null });
+    try {
+      await authService.changePassword(password);
+      set({ loading: false });
+      return true;
+    } catch (err: any) {
+      set({ error: err.response?.data?.message || 'Password update failed', loading: false });
       return false;
     }
   },

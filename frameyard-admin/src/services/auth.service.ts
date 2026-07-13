@@ -31,7 +31,12 @@ return response.data;
   return response.data.user;
 },
 
+  changePassword: async (password: string): Promise<void> => {
+    await api.patch('/auth/password', { password });
+  },
+
   logout: async (): Promise<void> => {
+    await api.post('/auth/logout');
     localStorage.removeItem('fy_auth_token');
   },
 };

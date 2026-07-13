@@ -10,7 +10,7 @@ export interface User {
   stateName?: string | null;
   countryName?: string | null;
   gender?: 'MALE' | 'FEMALE' | 'OTHER' | null;
-  role: 'CUSTOMER' | 'ADMIN';
+  role: 'CUSTOMER' | 'ADMIN' | 'EMPLOYEE';
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

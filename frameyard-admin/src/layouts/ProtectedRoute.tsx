@@ -1,12 +1,15 @@
 import React, { useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import useAuth from '../hooks/useAuth';
+import { useAuthStore } from '../store/authStore';
 
 export const ProtectedRoute: React.FC = () => {
-  const { user, isAuthenticated, loading, checkAuth } = useAuth();
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const loading = useAuthStore((state) => state.loading);
+  const checkAuth = useAuthStore((state) => state.checkAuth);
 
   useEffect(() => {
-    checkAuth();
+    void checkAuth();
   }, [checkAuth]);
 
   if (loading) {
@@ -18,11 +21,11 @@ export const ProtectedRoute: React.FC = () => {
     );
   }
 
-   if (!isAuthenticated) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  if (user?.role !== 'ADMIN') {
+  if (user?.role !== 'ADMIN' && user?.role !== 'EMPLOYEE') {
     return <Navigate to="/login" replace />;
   }
 

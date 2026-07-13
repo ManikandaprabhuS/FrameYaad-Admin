@@ -90,9 +90,10 @@ export const AdminLayout: React.FC = () => {
     { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
     { name: 'Customers', path: '/admin/customers', icon: Users },
     { name: 'Notifications', path: '/admin/notifications', icon: Bell },
+    { name: 'Employees', path: '/admin/employees', icon: Users, adminOnly: true },
     { name: 'Profile', path: '/admin/profile', icon: User },
-    { name: 'Settings', path: '/admin/settings', icon: Settings },
-  ];
+    { name: 'Settings', path: '/admin/settings', icon: Settings, adminOnly: true },
+  ].filter((link) => !link.adminOnly || user?.role === 'ADMIN');
 
   // Breadcrumb generator
   const getBreadcrumbs = () => {

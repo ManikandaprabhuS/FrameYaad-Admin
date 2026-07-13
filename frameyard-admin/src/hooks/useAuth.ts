@@ -10,6 +10,7 @@ export const useAuth = () => {
   const logout = useAuthStore((state) => state.logout);
   const checkAuth = useAuthStore((state) => state.checkAuth);
   const updateProfile = useAuthStore((state) => state.updateProfile);
+  const changePassword = useAuthStore((state) => state.changePassword);
   const clearError = useAuthStore((state) => state.clearError);
 
   return {
@@ -22,6 +23,7 @@ export const useAuth = () => {
     logout,
     checkAuth,
     updateProfile,
+    changePassword,
     clearError,
   };
 };
