@@ -40,7 +40,7 @@ export const Modal: React.FC<ModalProps> = ({
   }[size];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-x-hidden overflow-y-auto">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-4 overflow-x-hidden overflow-y-auto">
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-black/40 transition-opacity duration-300 animate-fade-in"
@@ -48,7 +48,7 @@ export const Modal: React.FC<ModalProps> = ({
       />
 
       {/* Modal Content container */}
-      <div className={`relative w-full bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl z-10 overflow-hidden transform transition-all duration-300 ${sizeClasses}`}>
+      <div className={`relative w-full max-h-[calc(100vh-1.5rem)] bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl z-10 overflow-hidden transform transition-all duration-300 ${sizeClasses}`}>
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-outline-variant bg-surface-container-low">
           <h3 className="text-base font-bold text-on-surface">{title}</h3>
@@ -61,7 +61,7 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
 
         {/* Body */}
-        <div className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+        <div className="p-4 sm:p-6 max-h-[calc(100vh-10rem)] overflow-y-auto custom-scrollbar">
           {children}
         </div>
 
