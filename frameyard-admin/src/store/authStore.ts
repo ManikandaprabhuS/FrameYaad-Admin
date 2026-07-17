@@ -2,6 +2,33 @@ import { create } from 'zustand';
 import { User } from '../types';
 import { authService } from '../services/auth.service';
 
+const AUTH_TOKEN_KEY = 'fy_auth_token';
+
+const getStoredAuthToken = () => {
+  const sessionToken = sessionStorage.getItem(AUTH_TOKEN_KEY);
+  const legacyLocalToken = localStorage.getItem(AUTH_TOKEN_KEY);
+
+  if (!sessionToken && legacyLocalToken) {
+    sessionStorage.setItem(AUTH_TOKEN_KEY, legacyLocalToken);
+  }
+
+  if (legacyLocalToken) {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+  }
+
+  return sessionToken || legacyLocalToken;
+};
+
+const setStoredAuthToken = (token: string) => {
+  sessionStorage.setItem(AUTH_TOKEN_KEY, token);
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+};
+
+const clearStoredAuthToken = () => {
+  sessionStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+};
+
 interface AuthState {
   user: User | null;
   token: string | null;
@@ -46,7 +73,7 @@ const user = response.user;
 const token = response.token ?? null;
 
 if (token) {
-  localStorage.setItem("fy_auth_token", token);
+  setStoredAuthToken(token);
 }
 
     set({
@@ -83,9 +110,7 @@ if (token) {
 
   } catch {
 
-    localStorage.removeItem(
-      "fy_auth_token"
-    );
+    clearStoredAuthToken();
 
     set({
       user: null,
@@ -102,7 +127,7 @@ if (token) {
   });
   try {
     const user =await authService.me();
-   const token = localStorage.getItem("fy_auth_token");
+   const token = getStoredAuthToken();
 
    set({
   user,
@@ -119,7 +144,7 @@ if (token) {
       isAuthenticated: false,
       loading: false,
     });
-    localStorage.removeItem("fy_auth_token");
+    clearStoredAuthToken();
   }
 },
 

@@ -8,8 +8,6 @@ export const authService = {
     password,
   });
 
-console.log("Login response:", response.data);
-console.log("Status:", response.status);
 return response.data;
 },
 
@@ -37,6 +35,7 @@ return response.data;
 
   logout: async (): Promise<void> => {
     await api.post('/auth/logout');
+    sessionStorage.removeItem('fy_auth_token');
     localStorage.removeItem('fy_auth_token');
   },
 };
