@@ -30,7 +30,8 @@ export const OverviewPage: React.FC = () => {
   const { orders, fetchOrders, loading: loadingOrders } = useOrders(true);
   const { customers, fetchCustomers, loading: loadingCustomers } = useCustomers(true);
   const today = new Date();
-  const [reportRange, setReportRange] = useState<'year' | 'month' | 'custom'>('month');
+  type ReportRange = 'today' | 'week' | 'month' | 'year' | 'custom';
+  const [reportRange, setReportRange] = useState<ReportRange>('month');
   const [reportFromDate, setReportFromDate] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10)
   );
@@ -44,6 +45,35 @@ export const OverviewPage: React.FC = () => {
 
   const reportDateRange = useMemo(() => {
     const now = new Date();
+
+    if (reportRange === 'today') {
+      return {
+        from: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+        to: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
+        label: 'Today',
+      };
+    }
+
+    if (reportRange === 'week') {
+      const dayOfWeek = now.getDay();
+      const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceMonday);
+      const weekEnd = new Date(
+        weekStart.getFullYear(),
+        weekStart.getMonth(),
+        weekStart.getDate() + 6,
+        23,
+        59,
+        59,
+        999
+      );
+
+      return {
+        from: weekStart,
+        to: weekEnd,
+        label: 'This Week',
+      };
+    }
 
     if (reportRange === 'year') {
       return {
@@ -280,9 +310,11 @@ export const OverviewPage: React.FC = () => {
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:flex-wrap xl:justify-end">
               <select
                 value={reportRange}
-                onChange={(event) => setReportRange(event.target.value as 'year' | 'month' | 'custom')}
+                onChange={(event) => setReportRange(event.target.value as ReportRange)}
                 className="h-9 rounded-lg border border-outline-variant bg-surface px-3 text-center text-xs font-semibold text-on-surface outline-none [text-align-last:center]"
               >
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
                 <option value="month">This Month</option>
                 <option value="year">This Year</option>
                 <option value="custom">Custom Range</option>
