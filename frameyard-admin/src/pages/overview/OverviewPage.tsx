@@ -384,7 +384,7 @@ export const OverviewPage: React.FC = () => {
               )}
               <button
                 onClick={handleDownloadRevenueReport}
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-outline-variant px-3 text-xs font-semibold text-[#008c3a] transition-colors hover:bg-surface-container"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-[#111827] bg-[#111827] px-3 text-xs font-semibold text-white transition-colors hover:bg-black"
               >
                 <Download className="h-3.5 w-3.5" />
                 Report PDF
@@ -397,9 +397,9 @@ export const OverviewPage: React.FC = () => {
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="revenueGreenFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#20c866" stopOpacity={0.58} />
-                    <stop offset="48%" stopColor="#20c866" stopOpacity={0.22} />
-                    <stop offset="100%" stopColor="#20c866" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="#111827" stopOpacity={0.34} />
+                    <stop offset="48%" stopColor="#111827" stopOpacity={0.14} />
+                    <stop offset="100%" stopColor="#111827" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="0" vertical stroke="rgba(15,23,42,0.08)" />
@@ -413,11 +413,11 @@ export const OverviewPage: React.FC = () => {
                 <Area
                   type="natural"
                   dataKey="revenue"
-                  stroke="#20c866"
+                  stroke="#111827"
                   strokeWidth={3.2}
                   fill="url(#revenueGreenFill)"
-                  dot={{ r: 4.5, stroke: '#20c866', strokeWidth: 2, fill: '#ffffff' }}
-                  activeDot={{ r: 6, stroke: '#ffffff', strokeWidth: 2, fill: '#20c866' }}
+                  dot={{ r: 4.5, stroke: '#111827', strokeWidth: 2, fill: '#ffffff' }}
+                  activeDot={{ r: 6, stroke: '#ffffff', strokeWidth: 2, fill: '#111827' }}
                 />
               </AreaChart>
             </ResponsiveContainer>
