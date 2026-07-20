@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -346,11 +346,11 @@ export const OverviewPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Revenue Line Chart */}
-        <div className="lg:col-span-2 bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)] flex flex-col">
+        <div className="lg:col-span-2 overflow-hidden rounded-xl border border-[#2f3338] bg-[#1f1f1f] p-6 shadow-[0_14px_40px_rgba(0,0,0,0.22)] flex flex-col">
           <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div>
-              <h3 className="text-sm font-bold text-on-surface uppercase tracking-wider">Revenue ({reportDateRange.label})</h3>
-              <p className="mt-1 text-xs text-on-surface-variant">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Revenue ({reportDateRange.label})</h3>
+              <p className="mt-1 text-xs font-semibold text-white/60">
                 INR {reportRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} from {reportOrders.length} orders
               </p>
             </div>
@@ -358,7 +358,7 @@ export const OverviewPage: React.FC = () => {
               <select
                 value={reportRange}
                 onChange={(event) => setReportRange(event.target.value as ReportRange)}
-                className="h-9 rounded-lg border border-outline-variant bg-surface px-3 text-center text-xs font-semibold text-on-surface outline-none [text-align-last:center]"
+                className="h-9 rounded-lg border border-white/15 bg-white px-3 text-center text-xs font-bold text-[#1f1f1f] outline-none [text-align-last:center]"
               >
                 <option value="today">Today</option>
                 <option value="week">This Week</option>
@@ -372,19 +372,19 @@ export const OverviewPage: React.FC = () => {
                     type="date"
                     value={reportFromDate}
                     onChange={(event) => setReportFromDate(event.target.value)}
-                    className="h-9 rounded-lg border border-outline-variant bg-surface px-3 text-xs text-on-surface outline-none"
+                    className="h-9 rounded-lg border border-white/15 bg-white px-3 text-xs font-semibold text-[#1f1f1f] outline-none"
                   />
                   <input
                     type="date"
                     value={reportToDate}
                     onChange={(event) => setReportToDate(event.target.value)}
-                    className="h-9 rounded-lg border border-outline-variant bg-surface px-3 text-xs text-on-surface outline-none"
+                    className="h-9 rounded-lg border border-white/15 bg-white px-3 text-xs font-semibold text-[#1f1f1f] outline-none"
                   />
                 </>
               )}
               <button
                 onClick={handleDownloadRevenueReport}
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-outline-variant px-3 text-xs font-semibold text-primary transition-colors hover:bg-surface-container"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-white/15 bg-white px-3 text-xs font-bold text-[#006d32] transition-colors hover:bg-white/90"
               >
                 <Download className="h-3.5 w-3.5" />
                 Report PDF
@@ -394,23 +394,32 @@ export const OverviewPage: React.FC = () => {
           
           <div className="w-full h-64 mt-auto">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="day" tickLine={false} axisLine={false} style={{ fontSize: '11px', fill: '#6b7280' }} />
-                <YAxis tickLine={false} axisLine={false} style={{ fontSize: '11px', fill: '#6b7280' }} tickFormatter={(v) => `₹${v}`} />
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revenueGreenFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#20c866" stopOpacity={0.78} />
+                    <stop offset="45%" stopColor="#159947" stopOpacity={0.36} />
+                    <stop offset="100%" stopColor="#102516" stopOpacity={0.04} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="0" vertical stroke="rgba(255,255,255,0.09)" />
+                <XAxis dataKey="day" tickLine={false} axisLine={false} style={{ fontSize: '12px', fill: 'rgba(255,255,255,0.66)', fontWeight: 700 }} />
+                <YAxis tickLine={false} axisLine={false} style={{ fontSize: '12px', fill: 'rgba(255,255,255,0.66)', fontWeight: 700 }} tickFormatter={(v) => `₹${v}`} />
                 <Tooltip 
-                  contentStyle={{ background: '#fff', border: '1px solid #c3c6d7', borderRadius: '8px', fontSize: '12px' }}
+                  contentStyle={{ background: '#111', border: '1px solid rgba(255,255,255,0.16)', borderRadius: '10px', color: '#fff', fontSize: '12px' }}
+                  labelStyle={{ color: '#fff', fontWeight: 700 }}
                   formatter={(value) => [`₹${value}`, 'Revenue']}
                 />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="revenue"
-                  stroke="#004ac6"
-                  strokeWidth={2.5}
-                  dot={{ r: 4, stroke: '#004ac6', strokeWidth: 2, fill: '#fff' }}
-                  activeDot={{ r: 6 }}
+                  stroke="#20c866"
+                  strokeWidth={4}
+                  fill="url(#revenueGreenFill)"
+                  dot={{ r: 4.5, stroke: '#f8fafc', strokeWidth: 2, fill: '#f8fafc' }}
+                  activeDot={{ r: 6, stroke: '#f8fafc', strokeWidth: 2, fill: '#20c866' }}
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
