@@ -122,18 +122,65 @@ export const OverviewPage: React.FC = () => {
   const calculatedCustomers = customers.length;
   const calculatedProducts = products.filter((product) => product.isActive).length;
 
-  const revenueByDay = reportOrders.reduce<Record<string, number>>((acc, order) => {
-    const day = new Date(order.createdAt).toLocaleDateString('en-US', {
-      day: '2-digit',
-      month: 'short',
-    });
-    acc[day] = (acc[day] || 0) + Number(order.totalAmount || 0);
-    return acc;
-  }, {});
+  const chartData = useMemo(() => {
+    const formatDateKey = (date: Date) =>
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-  const chartData = Object.entries(revenueByDay)
-    .map(([day, revenue]) => ({ day, revenue }))
-    .slice(-30);
+    const bucketByKey = reportOrders.reduce<Record<string, number>>((acc, order) => {
+      const createdAt = new Date(order.createdAt);
+      const key =
+        reportRange === 'today'
+          ? `${formatDateKey(createdAt)}-${String(createdAt.getHours()).padStart(2, '0')}`
+          : reportRange === 'year'
+          ? `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, '0')}`
+          : formatDateKey(createdAt);
+
+      acc[key] = (acc[key] || 0) + Number(order.totalAmount || 0);
+      return acc;
+    }, {});
+
+    if (reportRange === 'year') {
+      return Array.from({ length: 12 }, (_, monthIndex) => {
+        const date = new Date(reportDateRange.from.getFullYear(), monthIndex, 1);
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+        return {
+          day: date.toLocaleDateString('en-US', { month: 'short' }),
+          revenue: bucketByKey[key] || 0,
+        };
+      });
+    }
+
+    if (reportRange === 'today') {
+      return Array.from({ length: 24 }, (_, hourIndex) => {
+        const key = `${formatDateKey(reportDateRange.from)}-${String(hourIndex).padStart(2, '0')}`;
+
+        return {
+          day: hourIndex % 3 === 0 ? `${hourIndex}:00` : '',
+          revenue: bucketByKey[key] || 0,
+        };
+      });
+    }
+
+    const daysInRange = Math.max(
+      1,
+      Math.ceil((reportDateRange.to.getTime() - reportDateRange.from.getTime()) / (24 * 60 * 60 * 1000)) + 1
+    );
+
+    return Array.from({ length: Math.min(daysInRange, 31) }, (_, dayIndex) => {
+      const date = new Date(reportDateRange.from);
+      date.setDate(reportDateRange.from.getDate() + dayIndex);
+      const key = formatDateKey(date);
+
+      return {
+        day: date.toLocaleDateString('en-US', {
+          day: '2-digit',
+          month: 'short',
+        }),
+        revenue: bucketByKey[key] || 0,
+      };
+    });
+  }, [reportDateRange, reportOrders, reportRange]);
 
   const reportRevenue = reportOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
 
