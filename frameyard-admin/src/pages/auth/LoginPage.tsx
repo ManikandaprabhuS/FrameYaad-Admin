@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { LogIn } from 'lucide-react';
-import fyLogo from '../../assets/fy-logo.jpeg';
+import fyLogoIcon from '../../assets/fy-logo-icon.jpeg';
 import loadingGif from '../../assets/icons8-loading.gif';
 
 export const LoginPage: React.FC = () => {
@@ -36,7 +36,7 @@ export const LoginPage: React.FC = () => {
     <div className="min-h-screen bg-background flex flex-col justify-center items-center px-4">
       <div className="w-full max-w-md bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-xl p-8 flex flex-col">
         <div className="flex flex-col items-center mb-8 text-center">
-          <img src={fyLogo} alt="FrameYaad logo" className="mb-4 h-14 w-14 rounded-2xl object-cover" />
+          <img src={fyLogoIcon} alt="FrameYaad logo" className="mb-4 h-16 w-16 rounded-2xl object-contain p-2" />
           <h2 className="text-2xl font-bold text-on-surface">FrameYaad Admin</h2>
           <p className="text-sm text-on-surface-variant mt-1">Sign in to manage your store console.</p>
         </div>

@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useNotifications from '../hooks/useNotifications';
 import { customerService } from '../services/customer.service';
-import fyLogo from '../assets/fy-logo.jpeg';
+import fyLogoIcon from '../assets/fy-logo-icon.jpeg';
 import { 
   LayoutDashboard, 
   Package, 
@@ -130,7 +130,7 @@ export const AdminLayout: React.FC = () => {
           className="mb-8 flex items-center justify-center gap-3 flex-shrink-0 rounded-xl transition-transform hover:scale-105"
           title="FrameYaad Admin"
         >
-          <img src={fyLogo} alt="FrameYaad logo" className="h-10 w-10 rounded-xl object-cover" />
+          <img src={fyLogoIcon} alt="FrameYaad logo" className="h-9 w-9 rounded-xl object-contain p-1" />
         </Link>
         
         <nav className="flex-1 flex flex-col gap-1 overflow-y-auto custom-scrollbar">
@@ -197,7 +197,7 @@ export const AdminLayout: React.FC = () => {
       }`}>
         <div className="flex items-center justify-between mb-8 px-4">
           <Link to="/admin/overview" className="flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
-            <img src={fyLogo} alt="FrameYaad logo" className="h-9 w-9 rounded-xl object-cover" />
+            <img src={fyLogoIcon} alt="FrameYaad logo" className="h-9 w-9 rounded-xl object-contain p-1" />
             <div>
               <h1 className="font-sans text-lg font-bold text-on-surface">FrameYard</h1>
               <p className="text-[10px] font-semibold text-secondary tracking-wider uppercase">Admin</p>
