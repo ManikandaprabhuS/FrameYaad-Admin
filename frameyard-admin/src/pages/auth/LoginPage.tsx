@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { LogIn } from 'lucide-react';
+import fyLogo from '../../assets/fy-logo.jpeg';
+import loadingGif from '../../assets/icons8-loading.gif';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -34,9 +36,7 @@ export const LoginPage: React.FC = () => {
     <div className="min-h-screen bg-background flex flex-col justify-center items-center px-4">
       <div className="w-full max-w-md bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-xl p-8 flex flex-col">
         <div className="flex flex-col items-center mb-8 text-center">
-          <div className="w-12 h-12 bg-primary text-on-primary rounded-xl flex items-center justify-center font-bold text-xl mb-4">
-            FY
-          </div>
+          <img src={fyLogo} alt="FrameYaad logo" className="mb-4 h-14 w-14 rounded-2xl object-cover" />
           <h2 className="text-2xl font-bold text-on-surface">FrameYaad Admin</h2>
           <p className="text-sm text-on-surface-variant mt-1">Sign in to manage your store console.</p>
         </div>
@@ -82,7 +82,7 @@ export const LoginPage: React.FC = () => {
             className="w-full flex items-center justify-center gap-2 bg-primary text-on-primary hover:bg-primary/95 font-semibold py-3 rounded-xl shadow-sm transition-all disabled:opacity-50 mt-2 hover:scale-[1.01]"
           >
             {loading ? (
-              <div className="w-5 h-5 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></div>
+              <img src={loadingGif} alt="Signing in" className="h-5 w-5 object-contain" />
             ) : (
               <>
                 <LogIn className="w-4 h-4" />

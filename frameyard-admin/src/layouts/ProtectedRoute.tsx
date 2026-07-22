@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import loadingGif from '../assets/icons8-loading.gif';
 
 export const ProtectedRoute: React.FC = () => {
   const user = useAuthStore((state) => state.user);
@@ -15,7 +16,7 @@ export const ProtectedRoute: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <img src={loadingGif} alt="Loading" className="h-14 w-14 object-contain" />
         <p className="mt-4 text-sm font-medium text-secondary animate-pulse">Checking credentials...</p>
       </div>
     );

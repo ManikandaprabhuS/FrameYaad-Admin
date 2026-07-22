@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useNotifications from '../hooks/useNotifications';
 import { customerService } from '../services/customer.service';
+import fyLogo from '../assets/fy-logo.jpeg';
 import { 
   LayoutDashboard, 
   Package, 
@@ -124,12 +125,13 @@ export const AdminLayout: React.FC = () => {
       <aside 
         className="hidden md:flex h-screen fixed left-0 top-0 w-[72px] bg-surface-container-lowest border-r border-outline-variant flex-col px-3 py-stack-lg z-50 transition-all duration-300"
       >
-        <div 
-          className="mb-8 flex items-center justify-center gap-3 flex-shrink-0"
+        <Link
+          to="/admin/overview"
+          className="mb-8 flex items-center justify-center gap-3 flex-shrink-0 rounded-xl transition-transform hover:scale-105"
           title="FrameYaad Admin"
         >
-          <div className="w-8 h-8 rounded-lg bg-primary flex-shrink-0 flex items-center justify-center text-on-primary font-bold">FY</div>
-        </div>
+          <img src={fyLogo} alt="FrameYaad logo" className="h-10 w-10 rounded-xl object-cover" />
+        </Link>
         
         <nav className="flex-1 flex flex-col gap-1 overflow-y-auto custom-scrollbar">
           {navLinks.map((link) => {
@@ -194,13 +196,13 @@ export const AdminLayout: React.FC = () => {
         mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="flex items-center justify-between mb-8 px-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-on-primary font-bold">F</div>
+          <Link to="/admin/overview" className="flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
+            <img src={fyLogo} alt="FrameYaad logo" className="h-9 w-9 rounded-xl object-cover" />
             <div>
               <h1 className="font-sans text-lg font-bold text-on-surface">FrameYard</h1>
               <p className="text-[10px] font-semibold text-secondary tracking-wider uppercase">Admin</p>
             </div>
-          </div>
+          </Link>
           <button 
             className="p-1.5 hover:bg-surface-container rounded-lg text-on-surface"
             onClick={() => setMobileMenuOpen(false)}
