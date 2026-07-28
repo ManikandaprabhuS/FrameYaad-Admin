@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import CustomerNavbar from '../features/customer/components/CustomerNavbar';
+import Footer from '../features/customer/components/Footer';
 
 const CustomerLayout: React.FC = () => {
   return (
@@ -11,12 +12,7 @@ const CustomerLayout: React.FC = () => {
         <Outlet />
       </main>
 
-      <footer className="border-t border-outline-variant bg-surface-container-lowest">
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-sm text-on-surface-variant sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-          <span>© {new Date().getFullYear()} FrameYaad</span>
-          <span>Customer website and admin dashboard share one production frontend.</span>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
