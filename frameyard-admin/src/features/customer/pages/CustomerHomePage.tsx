@@ -4,6 +4,7 @@ import { ArrowDown, ArrowRight, Heart, ShoppingCart } from 'lucide-react';
 import useProducts from '../../../hooks/useProducts';
 import heroFallback from '../../../assets/hero.png';
 import { Product } from '../../../types';
+import { HowItWorksSection } from '../components';
 
 const CustomerHomePage: React.FC = () => {
   const { products, fetchProducts } = useProducts(true);
@@ -171,6 +172,8 @@ const CustomerHomePage: React.FC = () => {
           })}
         </div>
       </section>
+
+      <HowItWorksSection />
     </div>
   );
 };
