@@ -23,11 +23,11 @@ export const ProtectedRoute: React.FC = () => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/fyadminlogin" replace />;
   }
 
   if (user?.role !== 'ADMIN' && user?.role !== 'EMPLOYEE') {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/fyadminlogin" replace />;
   }
 
   return <Outlet />;

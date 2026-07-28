@@ -8,7 +8,7 @@ import loadingGif from '../../assets/icons8-loading.gif';
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, loading, error, isAuthenticated, clearError } = useAuth();
+  const { login, loading, error, isAuthenticated, user, clearError } = useAuth();
   const navigate = useNavigate();
 
   // Clear previous auth errors on load
@@ -18,10 +18,10 @@ export const LoginPage: React.FC = () => {
 
   // If already authenticated, redirect
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && (user?.role === 'ADMIN' || user?.role === 'EMPLOYEE')) {
       navigate('/admin/overview', { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, user?.role]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

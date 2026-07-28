@@ -72,6 +72,18 @@ export const useAuthStore = create<AuthState>((set) => ({
 const user = response.user;
 const token = response.token ?? null;
 
+if (user?.role === 'CUSTOMER') {
+  clearStoredAuthToken();
+  set({
+    user: null,
+    token: null,
+    isAuthenticated: false,
+    error: 'Access Denied: customers cannot access the admin dashboard.',
+    loading: false,
+  });
+  return false;
+}
+
 if (token) {
   setStoredAuthToken(token);
 }

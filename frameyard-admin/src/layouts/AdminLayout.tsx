@@ -44,7 +44,7 @@ export const AdminLayout: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate('/fyadminlogin');
   };
 
   const isLikelyPhoneNumber = (value: string) => {

@@ -1,0 +1,7 @@
+export { default as CustomerHomePage } from './CustomerHomePage';
+export { default as CustomerProductsPage } from './CustomerProductsPage';
+export { default as CustomerProductDetailsPage } from './CustomerProductDetailsPage';
+export { default as CartPage } from './CartPage';
+export { default as CheckoutPage } from './CheckoutPage';
+export { default as CustomerProfilePage } from './CustomerProfilePage';
+export { default as CustomerOrdersPage } from './CustomerOrdersPage';

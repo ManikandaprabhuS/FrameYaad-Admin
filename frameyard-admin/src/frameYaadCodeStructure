@@ -1,0 +1,97 @@
+Folder PATH listing for volume DATA
+Volume serial number is 000000B4 3018:297F
+D:.
+¦   App.css
+¦   App.tsx
+¦   frameYaadCodeStructure
+¦   index.css
+¦   main.tsx
+¦   
++---assets
+¦       fy-logo-icon.jpeg
+¦       fy-logo.jpeg
+¦       hero.png
+¦       icons8-loading.gif
+¦       react.svg
+¦       vite.svg
+¦       
++---components
+¦   +---tables
+¦   ¦       DataTable.tsx
+¦   ¦       
+¦   +---ui
+¦           Badge.tsx
+¦           ConfirmDialog.tsx
+¦           EmptyState.tsx
+¦           KpiCard.tsx
+¦           Modal.tsx
+¦           Skeleton.tsx
+¦           
++---hooks
+¦       useAuth.ts
+¦       useCustomers.ts
+¦       useNotifications.ts
+¦       useOrders.ts
+¦       useProducts.ts
+¦       
++---layouts
+¦       AdminLayout.tsx
+¦       AdminOnlyRoute.tsx
+¦       ProtectedRoute.tsx
+¦       
++---pages
+¦   +---auth
+¦   ¦       LoginPage.tsx
+¦   ¦       
+¦   +---customers
+¦   ¦       CustomerDetailsPage.tsx
+¦   ¦       CustomersPage.tsx
+¦   ¦       
+¦   +---employees
+¦   ¦       EmployeesPage.tsx
+¦   ¦       
+¦   +---notifications
+¦   ¦       NotificationsPage.tsx
+¦   ¦       
+¦   +---orders
+¦   ¦       OrdersPage.tsx
+¦   ¦       
+¦   +---overview
+¦   ¦       OverviewPage.tsx
+¦   ¦       
+¦   +---products
+¦   ¦       ProductDetailsPage.tsx
+¦   ¦       ProductsPage.tsx
+¦   ¦       
+¦   +---profile
+¦   ¦       ProfilePage.tsx
+¦   ¦       
+¦   +---settings
+¦           SettingsPage.tsx
+¦           
++---routes
+¦       index.tsx
+¦       
++---services
+¦       api.ts
+¦       auth.service.ts
+¦       customer.service.ts
+¦       employee.service.ts
+¦       notification.service.ts
+¦       order.service.ts
+¦       product.service.ts
+¦       
++---store
+¦       authStore.ts
+¦       customerStore.ts
+¦       notificationStore.ts
+¦       orderStore.ts
+¦       productStore.ts
+¦       
++---types
+¦       employee.types.ts
+¦       index.ts
+¦       
++---utils
+        toast.ts
+        
