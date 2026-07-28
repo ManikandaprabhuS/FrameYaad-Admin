@@ -47,20 +47,7 @@ const quickLinks = ['Privacy Policy', 'Terms & Conditions', 'Refund Policy'];
 
 const FooterIllustration: React.FC = () => (
   <div className="relative overflow-hidden bg-white" aria-label="FrameYaad handcrafted framing process illustration">
-    <svg
-      className="absolute inset-x-0 bottom-0 h-40 w-full sm:h-44 lg:h-52"
-      viewBox="0 0 1440 320"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-      preserveAspectRatio="xMidYMid slice"
-    >
-      <path
-        d="M0 145C96 186 202 182 306 142C407 104 502 96 604 132C707 169 819 188 940 149C1056 111 1154 111 1264 146C1335 169 1390 166 1440 145V320H0V145Z"
-        fill="#111827"
-      />
-    </svg>
-    <div className="relative mx-auto grid h-52 max-w-7xl grid-cols-5 items-end px-0 sm:h-60 lg:h-72">
+    <div className="relative mx-auto grid h-52 max-w-7xl grid-cols-5 items-end overflow-hidden px-0 sm:h-60 lg:h-72">
       {[
         { src: frameWorker1, alt: 'Craftsperson preparing a frame', className: 'translate-y-2' },
         { src: frameWorker2, alt: 'Craftsperson holding a frame', className: '-translate-y-1' },
@@ -73,10 +60,11 @@ const FooterIllustration: React.FC = () => (
           src={worker.src}
           alt={worker.alt}
           loading="lazy"
-          className={`w-full object-contain object-bottom ${worker.className}`}
+          className={`w-full object-contain object-bottom [clip-path:inset(12px_0_0_0)] ${worker.className}`}
         />
       ))}
     </div>
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-[#111827] sm:h-12" />
   </div>
 );
 
