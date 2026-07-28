@@ -39,10 +39,10 @@ const FeaturedProductCard: React.FC<FeaturedProductCardProps> = ({
           onSelect?.();
         }
       }}
-      className={`group relative shrink-0 cursor-pointer overflow-hidden rounded-[1.75rem] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.10)] transition-[transform,box-shadow,outline-color] duration-500 ease-in-out will-change-transform hover:-translate-y-2 hover:shadow-[0_24px_70px_rgba(0,0,0,0.16)] focus:outline-none focus:ring-4 focus:ring-black/15 ${
+      className={`group relative shrink-0 cursor-pointer overflow-hidden rounded-[1.75rem] border bg-white shadow-[0_18px_50px_rgba(0,0,0,0.10)] transition-[transform,box-shadow,border-color] duration-500 ease-in-out will-change-transform hover:-translate-y-2 hover:shadow-[0_24px_70px_rgba(0,0,0,0.16)] focus:outline-none focus:ring-4 focus:ring-black/15 ${
         isActive
-          ? 'outline outline-[6px] outline-black shadow-[0_30px_90px_rgba(0,0,0,0.24)]'
-          : 'outline outline-0 outline-transparent'
+          ? 'border-[6px] border-black shadow-[0_30px_90px_rgba(0,0,0,0.24)]'
+          : 'border border-black/10'
       } ${className}`}
       style={style}
       aria-label={`Select ${product.name}`}
@@ -66,19 +66,19 @@ const FeaturedProductCard: React.FC<FeaturedProductCardProps> = ({
         />
       </div>
 
-      <div className="p-6">
-        <h3 className="text-xl font-black text-black">{product.name}</h3>
-        <div className="mt-5 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-3xl font-black text-black">
+      <div className="rounded-t-[1.1rem] bg-white px-5 pb-5 pt-4">
+        <h3 className="truncate text-lg font-black text-black">{product.name}</h3>
+        <div className="mt-4 flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-2xl font-black text-black">
               {pricing.currentPrice > 0 ? `₹${pricing.currentPrice.toLocaleString('en-IN')}` : '₹0'}
             </p>
-            <div className="mt-4 flex items-center gap-3">
-              <span className="text-lg font-bold text-black/45 line-through">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="text-sm font-bold text-black/45 line-through">
                 ₹{pricing.originalPrice.toLocaleString('en-IN')}
               </span>
               {pricing.discount > 0 && (
-                <span className="rounded-lg bg-[#f7dfc8] px-3 py-1.5 text-sm font-black text-[#c55f12]">
+                <span className="rounded-lg bg-[#f7dfc8] px-2.5 py-1.5 text-xs font-black text-[#c55f12]">
                   {pricing.discount}% OFF
                 </span>
               )}
@@ -86,13 +86,13 @@ const FeaturedProductCard: React.FC<FeaturedProductCardProps> = ({
           </div>
           <button
             type="button"
-            className={`flex h-14 w-14 items-center justify-center rounded-xl border border-black/20 transition hover:bg-black hover:text-white focus:outline-none focus:ring-4 focus:ring-black/15 ${
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-black/20 transition hover:bg-black hover:text-white focus:outline-none focus:ring-4 focus:ring-black/15 ${
               isActive ? 'bg-black text-white' : 'bg-white text-black'
             }`}
             aria-label={`Add ${product.name} to cart`}
             onClick={(event) => event.stopPropagation()}
           >
-            <ShoppingCart className="h-6 w-6" aria-hidden="true" />
+            <ShoppingCart className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
       </div>

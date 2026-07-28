@@ -28,13 +28,13 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
   const sectionRef = useRef<HTMLElement | null>(null);
   const mobileTrackRef = useRef<HTMLDivElement | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [manualIndex, setManualIndex] = useState<number | null>(null);
+  const [manualIndex, setManualIndex] = useState<number | null>(1);
   const [mobileActiveIndex, setMobileActiveIndex] = useState(1);
 
   const featuredProducts = useMemo(() => products.filter((product) => product.isActive).slice(0, 7), [products]);
   const maxIndex = Math.max(featuredProducts.length - 1, 0);
   const scrollIndex = clamp(1 + scrollProgress * Math.max(maxIndex - 1, 0), 0, maxIndex);
-  const activeIndex = manualIndex ?? Math.round(scrollIndex);
+  const activeIndex = clamp(manualIndex ?? Math.round(scrollIndex), 0, maxIndex);
   const desktopOffset = 560 - activeIndex * (CARD_WIDTH + CARD_GAP) - CARD_WIDTH / 2;
 
   useEffect(() => {
@@ -47,7 +47,9 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
       const rect = section.getBoundingClientRect();
       const viewportHeight = window.innerHeight || 1;
       const rawProgress = (viewportHeight - rect.top) / (viewportHeight + rect.height);
-      setScrollProgress(clamp(rawProgress, 0, 1));
+      const nextProgress = clamp(rawProgress, 0, 1);
+      setScrollProgress(nextProgress);
+      setManualIndex(clamp(Math.round(1 + nextProgress * Math.max(maxIndex - 1, 0)), 0, maxIndex));
     };
 
     const onScroll = () => {
@@ -64,7 +66,7 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
     };
-  }, []);
+  }, [maxIndex]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
     if (event.key === 'ArrowRight') {
