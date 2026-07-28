@@ -1,6 +1,11 @@
 import React, { FormEvent, useState } from 'react';
 import { BriefcaseBusiness, Camera, LucideIcon, Mail, MapPin, Phone, Send, Share2 } from 'lucide-react';
 import { showError, showSuccess } from '../../../utils/toast';
+import frameWorker1 from '../../../assets/frame_worker_1.png';
+import frameWorker2 from '../../../assets/frame_worker_2.png';
+import frameWorker3 from '../../../assets/frame_worker_3.png';
+import frameWorker4 from '../../../assets/frame_worker_4.png';
+import frameWorker5 from '../../../assets/frame_worker_5.png';
 
 interface SocialLink {
   name: string;
@@ -41,108 +46,37 @@ const contactItems: ContactItem[] = [
 const quickLinks = ['Privacy Policy', 'Terms & Conditions', 'Refund Policy'];
 
 const FooterIllustration: React.FC = () => (
-  <div className="relative overflow-hidden bg-white">
+  <div className="relative overflow-hidden bg-white" aria-label="FrameYaad handcrafted framing process illustration">
     <svg
-      className="block h-52 w-full sm:h-60 lg:h-72"
+      className="absolute inset-x-0 bottom-0 h-40 w-full sm:h-44 lg:h-52"
       viewBox="0 0 1440 320"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      role="img"
-      aria-label="FrameYaad handcrafted framing process illustration"
+      aria-hidden="true"
       preserveAspectRatio="xMidYMid slice"
     >
-      <rect width="1440" height="320" fill="#ffffff" />
       <path
-        d="M0 214C91 247 185 247 286 218C381 190 463 172 563 196C672 223 775 238 900 214C1033 188 1101 160 1234 196C1313 218 1375 220 1440 198V320H0V214Z"
+        d="M0 145C96 186 202 182 306 142C407 104 502 96 604 132C707 169 819 188 940 149C1056 111 1154 111 1264 146C1335 169 1390 166 1440 145V320H0V145Z"
         fill="#111827"
       />
-
-      <g stroke="#111827" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M93 176L158 200L218 164L256 200" />
-        <path d="M146 172L146 111L230 99L230 185" />
-        <path d="M154 118L222 108" />
-        <path d="M262 202H323" />
-        <path d="M302 174V205" />
-        <path d="M294 185L312 194" />
-        <path d="M87 205C116 191 145 188 177 192" />
-        <path d="M70 155L112 169L130 202" />
-        <path d="M85 138L110 151" />
-        <path d="M98 124C112 126 118 140 111 153" />
-        <path d="M84 132L76 160L64 185" />
-
-        <path d="M500 184L558 154L616 184" />
-        <path d="M523 169L539 113L602 143L585 196" />
-        <path d="M548 123L594 145" />
-        <path d="M493 201H632" />
-        <path d="M455 207V128" />
-        <path d="M475 204V115" />
-        <path d="M477 147H495" />
-        <path d="M512 94C530 98 535 115 524 130" />
-        <path d="M502 103L492 134L480 158" />
-        <path d="M521 126L545 149" />
-
-        <path d="M733 196H856" />
-        <path d="M753 165H816V208H753V165Z" />
-        <path d="M827 172H889V205H827V172Z" />
-        <path d="M712 202C729 189 747 187 767 194" />
-        <path d="M695 126L695 203" />
-        <path d="M672 127H718" />
-        <path d="M695 127L687 147" />
-        <path d="M766 94C782 98 787 114 777 128" />
-        <path d="M756 103L747 134L738 163" />
-        <path d="M775 127L803 153" />
-
-        <path d="M1025 200L1093 170L1160 200" />
-        <path d="M1057 170V111H1124V198" />
-        <path d="M1070 124H1110" />
-        <path d="M1026 118L1082 105" />
-        <path d="M1018 208H1184" />
-        <path d="M984 95C1002 99 1008 116 998 130" />
-        <path d="M973 104L965 135L956 166" />
-        <path d="M996 127L1028 153" />
-
-        <path d="M1257 207H1365" />
-        <path d="M1277 172H1352V207H1277V172Z" />
-        <path d="M1290 190H1338" />
-        <path d="M1368 169V124H1402" />
-        <path d="M1385 124V207" />
-        <path d="M1355 145C1370 143 1384 151 1386 168" />
-        <path d="M1234 148L1274 164L1290 202" />
-        <path d="M1249 131L1274 147" />
-        <path d="M1262 117C1278 121 1282 137 1274 150" />
-        <path d="M1248 124L1238 158L1226 184" />
-      </g>
-
-      <g stroke="#F7F3EF" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M73 207H270" />
-        <path d="M486 203H646" />
-        <path d="M730 207H900" />
-        <path d="M1014 207H1188" />
-        <path d="M1238 209H1397" />
-      </g>
-
-      <g fill="#111827">
-        <circle cx="103" cy="118" r="8" />
-        <circle cx="518" cy="87" r="8" />
-        <circle cx="772" cy="87" r="8" />
-        <circle cx="990" cy="88" r="8" />
-        <circle cx="1267" cy="110" r="8" />
-      </g>
-
-      <g stroke="#111827" strokeWidth="3" strokeLinecap="round">
-        <path d="M372 194C383 178 392 178 403 194" />
-        <path d="M388 178V148" />
-        <path d="M913 185C924 169 936 169 947 185" />
-        <path d="M930 169V139" />
-        <path d="M1410 166C1417 153 1427 153 1434 166" />
-      </g>
-
-      <g fill="#111827" opacity="0.9">
-        <path d="M369 208C380 196 392 196 405 208H369Z" />
-        <path d="M909 202C921 190 936 190 951 202H909Z" />
-        <path d="M1406 181C1416 169 1428 169 1440 181H1406Z" />
-      </g>
     </svg>
+    <div className="relative mx-auto grid h-52 max-w-7xl grid-cols-5 items-end px-0 sm:h-60 lg:h-72">
+      {[
+        { src: frameWorker1, alt: 'Craftsperson preparing a frame', className: 'translate-y-2' },
+        { src: frameWorker2, alt: 'Craftsperson holding a frame', className: '-translate-y-1' },
+        { src: frameWorker3, alt: 'Craftsperson inspecting a photo frame', className: 'translate-y-1' },
+        { src: frameWorker4, alt: 'Craftsperson selecting frame materials', className: 'translate-y-2' },
+        { src: frameWorker5, alt: 'Craftsperson packaging a completed frame', className: 'translate-y-1' },
+      ].map((worker) => (
+        <img
+          key={worker.alt}
+          src={worker.src}
+          alt={worker.alt}
+          loading="lazy"
+          className={`w-full object-contain object-bottom ${worker.className}`}
+        />
+      ))}
+    </div>
   </div>
 );
 
