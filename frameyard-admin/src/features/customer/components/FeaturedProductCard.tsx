@@ -66,7 +66,7 @@ const FeaturedProductCard: React.FC<FeaturedProductCardProps> = ({
         />
       </div>
 
-      <div className="rounded-t-[1.1rem] bg-white px-5 pb-5 pt-4">
+      <div className="relative z-10 -mt-4 rounded-t-[1.1rem] bg-white px-5 pb-5 pt-4 shadow-[0_-10px_22px_rgba(0,0,0,0.04)]">
         <h3 className="truncate text-lg font-black text-black">{product.name}</h3>
         <div className="mt-4 flex items-end justify-between gap-3">
           <div className="min-w-0">

@@ -30,12 +30,14 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
   const [scrollProgress, setScrollProgress] = useState(0);
   const [manualIndex, setManualIndex] = useState<number | null>(1);
   const [mobileActiveIndex, setMobileActiveIndex] = useState(1);
+  const [smoothIndex, setSmoothIndex] = useState(1);
 
   const featuredProducts = useMemo(() => products.filter((product) => product.isActive).slice(0, 7), [products]);
   const maxIndex = Math.max(featuredProducts.length - 1, 0);
   const scrollIndex = clamp(1 + scrollProgress * Math.max(maxIndex - 1, 0), 0, maxIndex);
   const activeIndex = clamp(manualIndex ?? Math.round(scrollIndex), 0, maxIndex);
-  const desktopOffset = 560 - activeIndex * (CARD_WIDTH + CARD_GAP) - CARD_WIDTH / 2;
+  const displayIndex = manualIndex ?? smoothIndex;
+  const desktopOffset = 560 - displayIndex * (CARD_WIDTH + CARD_GAP) - CARD_WIDTH / 2;
 
   useEffect(() => {
     let frameId = 0;
@@ -48,8 +50,10 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
       const viewportHeight = window.innerHeight || 1;
       const rawProgress = (viewportHeight - rect.top) / (viewportHeight + rect.height);
       const nextProgress = clamp(rawProgress, 0, 1);
+      const nextIndex = clamp(1 + nextProgress * Math.max(maxIndex - 1, 0), 0, maxIndex);
       setScrollProgress(nextProgress);
-      setManualIndex(clamp(Math.round(1 + nextProgress * Math.max(maxIndex - 1, 0)), 0, maxIndex));
+      setSmoothIndex(nextIndex);
+      setManualIndex(Math.round(nextIndex));
     };
 
     const onScroll = () => {
@@ -70,12 +74,36 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
     if (event.key === 'ArrowRight') {
-      setManualIndex((current) => clamp((current ?? activeIndex) + 1, 0, maxIndex));
+      setManualIndex((current) => {
+        const nextIndex = clamp((current ?? activeIndex) + 1, 0, maxIndex);
+        setSmoothIndex(nextIndex);
+        return nextIndex;
+      });
     }
 
     if (event.key === 'ArrowLeft') {
-      setManualIndex((current) => clamp((current ?? activeIndex) - 1, 0, maxIndex));
+      setManualIndex((current) => {
+        const nextIndex = clamp((current ?? activeIndex) - 1, 0, maxIndex);
+        setSmoothIndex(nextIndex);
+        return nextIndex;
+      });
     }
+  };
+
+  const handleDesktopWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    const horizontalIntent = Math.abs(event.deltaX) > Math.abs(event.deltaY);
+    if (!horizontalIntent && Math.abs(event.deltaY) < 8) return;
+
+    event.preventDefault();
+    const delta = horizontalIntent ? event.deltaX : event.deltaY;
+    const nextIndex = clamp(displayIndex + delta / 260, 0, maxIndex);
+    setSmoothIndex(nextIndex);
+    setManualIndex(Math.round(nextIndex));
+  };
+
+  const selectDesktopCard = (index: number) => {
+    setSmoothIndex(index);
+    setManualIndex(index);
   };
 
   const handleMobileScroll = () => {
@@ -119,7 +147,11 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
           </p>
         </div>
 
-        <div className="relative hidden h-[610px] overflow-visible px-6 pt-16 md:block" aria-label="Featured product carousel">
+        <div
+          className="relative hidden h-[610px] overflow-visible px-6 pt-16 md:block"
+          aria-label="Featured product carousel"
+          onWheel={handleDesktopWheel}
+        >
           <div
             className="flex items-center gap-14 px-2 transition-transform duration-500 ease-in-out will-change-transform"
             style={{ transform: `translate3d(${desktopOffset}px, 0, 0)` }}
@@ -133,7 +165,7 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
                   product={product}
                   pricing={getProductPricing(product)}
                   isActive={isActive}
-                  onSelect={() => setManualIndex(index)}
+                  onSelect={() => selectDesktopCard(index)}
                   className="w-[300px]"
                   style={{
                     transform: `translate3d(0, ${isActive ? 18 : 42}px, 0) scale(${isActive ? 1.12 : 0.92})`,
