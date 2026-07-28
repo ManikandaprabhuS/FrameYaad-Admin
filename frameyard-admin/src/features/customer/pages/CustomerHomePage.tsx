@@ -4,7 +4,7 @@ import { ArrowDown, ArrowRight, Heart, ShoppingCart } from 'lucide-react';
 import useProducts from '../../../hooks/useProducts';
 import heroFallback from '../../../assets/hero.png';
 import { Product } from '../../../types';
-import { HowItWorksSection } from '../components';
+import { CurvedProductCarousel, HowItWorksSection } from '../components';
 
 const CustomerHomePage: React.FC = () => {
   const { products, fetchProducts } = useProducts(true);
@@ -183,6 +183,7 @@ const CustomerHomePage: React.FC = () => {
       </section>
 
       <HowItWorksSection />
+      <CurvedProductCarousel products={products} />
     </div>
   );
 };
