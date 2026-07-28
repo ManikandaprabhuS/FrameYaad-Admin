@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Product } from '../../../types';
 import FeaturedProductCard, { FeaturedProductPricing } from './FeaturedProductCard';
 
@@ -25,85 +25,36 @@ const getProductPricing = (product: Product): FeaturedProductPricing => {
 };
 
 const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ products }) => {
-  const sectionRef = useRef<HTMLElement | null>(null);
   const mobileTrackRef = useRef<HTMLDivElement | null>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [manualIndex, setManualIndex] = useState<number | null>(1);
   const [mobileActiveIndex, setMobileActiveIndex] = useState(1);
   const [smoothIndex, setSmoothIndex] = useState(1);
 
   const featuredProducts = useMemo(() => products.filter((product) => product.isActive).slice(0, 7), [products]);
   const maxIndex = Math.max(featuredProducts.length - 1, 0);
-  const scrollIndex = clamp(1 + scrollProgress * Math.max(maxIndex - 1, 0), 0, maxIndex);
-  const activeIndex = clamp(manualIndex ?? Math.round(scrollIndex), 0, maxIndex);
-  const displayIndex = manualIndex ?? smoothIndex;
+  const activeIndex = clamp(Math.round(smoothIndex), 0, maxIndex);
+  const displayIndex = clamp(smoothIndex, 0, maxIndex);
   const desktopOffset = 560 - displayIndex * (CARD_WIDTH + CARD_GAP) - CARD_WIDTH / 2;
-
-  useEffect(() => {
-    let frameId = 0;
-
-    const updateProgress = () => {
-      const section = sectionRef.current;
-      if (!section) return;
-
-      const rect = section.getBoundingClientRect();
-      const viewportHeight = window.innerHeight || 1;
-      const rawProgress = (viewportHeight - rect.top) / (viewportHeight + rect.height);
-      const nextProgress = clamp(rawProgress, 0, 1);
-      const nextIndex = clamp(1 + nextProgress * Math.max(maxIndex - 1, 0), 0, maxIndex);
-      setScrollProgress(nextProgress);
-      setSmoothIndex(nextIndex);
-      setManualIndex(Math.round(nextIndex));
-    };
-
-    const onScroll = () => {
-      window.cancelAnimationFrame(frameId);
-      frameId = window.requestAnimationFrame(updateProgress);
-    };
-
-    updateProgress();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-    };
-  }, [maxIndex]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
     if (event.key === 'ArrowRight') {
-      setManualIndex((current) => {
-        const nextIndex = clamp((current ?? activeIndex) + 1, 0, maxIndex);
-        setSmoothIndex(nextIndex);
-        return nextIndex;
-      });
+      setSmoothIndex((current) => clamp(Math.round(current) + 1, 0, maxIndex));
     }
 
     if (event.key === 'ArrowLeft') {
-      setManualIndex((current) => {
-        const nextIndex = clamp((current ?? activeIndex) - 1, 0, maxIndex);
-        setSmoothIndex(nextIndex);
-        return nextIndex;
-      });
+      setSmoothIndex((current) => clamp(Math.round(current) - 1, 0, maxIndex));
     }
   };
 
   const handleDesktopWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    const horizontalIntent = Math.abs(event.deltaX) > Math.abs(event.deltaY);
-    if (!horizontalIntent && Math.abs(event.deltaY) < 8) return;
+    const delta = event.shiftKey ? event.deltaY : event.deltaX;
+    if (Math.abs(delta) < 4) return;
 
     event.preventDefault();
-    const delta = horizontalIntent ? event.deltaX : event.deltaY;
-    const nextIndex = clamp(displayIndex + delta / 260, 0, maxIndex);
-    setSmoothIndex(nextIndex);
-    setManualIndex(Math.round(nextIndex));
+    setSmoothIndex((current) => clamp(current + delta / 260, 0, maxIndex));
   };
 
   const selectDesktopCard = (index: number) => {
     setSmoothIndex(index);
-    setManualIndex(index);
   };
 
   const handleMobileScroll = () => {
@@ -128,7 +79,6 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
 
   return (
     <section
-      ref={sectionRef}
       id="featured-products"
       className="overflow-hidden bg-white px-4 py-16 sm:px-6 lg:px-8"
       aria-labelledby="featured-products-heading"
