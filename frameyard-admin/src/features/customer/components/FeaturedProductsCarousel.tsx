@@ -51,7 +51,6 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
     };
 
     const onScroll = () => {
-      setManualIndex(null);
       window.cancelAnimationFrame(frameId);
       frameId = window.requestAnimationFrame(updateProgress);
     };
@@ -86,6 +85,13 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
     setMobileActiveIndex(clamp(Math.round(track.scrollLeft / cardStep), 0, maxIndex));
   };
 
+  const selectMobileCard = (index: number) => {
+    setMobileActiveIndex(index);
+    const track = mobileTrackRef.current;
+    const target = track?.querySelectorAll<HTMLElement>('[data-featured-card]')[index];
+    target?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  };
+
   if (featuredProducts.length === 0) {
     return null;
   }
@@ -111,7 +117,7 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
           </p>
         </div>
 
-        <div className="relative hidden h-[520px] overflow-hidden md:block" aria-label="Featured product carousel">
+        <div className="relative hidden h-[610px] overflow-visible px-6 pt-16 md:block" aria-label="Featured product carousel">
           <div
             className="flex items-center gap-14 px-2 transition-transform duration-500 ease-in-out will-change-transform"
             style={{ transform: `translate3d(${desktopOffset}px, 0, 0)` }}
@@ -128,7 +134,7 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
                   onSelect={() => setManualIndex(index)}
                   className="w-[300px]"
                   style={{
-                    transform: `scale(${isActive ? 1.16 : 0.93})`,
+                    transform: `translate3d(0, ${isActive ? 18 : 42}px, 0) scale(${isActive ? 1.12 : 0.92})`,
                     zIndex: isActive ? 20 : 10,
                   }}
                 />
@@ -141,7 +147,7 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
           <div
             ref={mobileTrackRef}
             onScroll={handleMobileScroll}
-            className="flex snap-x snap-mandatory gap-5 overflow-x-auto px-[10vw] pb-10 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex snap-x snap-mandatory gap-5 overflow-x-auto overflow-y-visible px-[10vw] pb-12 pt-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             aria-label="Swipe featured products"
           >
             {featuredProducts.map((product, index) => {
@@ -153,8 +159,8 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
                     product={product}
                     pricing={getProductPricing(product)}
                     isActive={isActive}
-                    onSelect={() => setMobileActiveIndex(index)}
-                    style={{ transform: `scale(${isActive ? 1 : 0.93})` }}
+                    onSelect={() => selectMobileCard(index)}
+                    style={{ transform: `translate3d(0, ${isActive ? 0 : 14}px, 0) scale(${isActive ? 1 : 0.93})` }}
                   />
                 </div>
               );
