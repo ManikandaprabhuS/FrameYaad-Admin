@@ -18,6 +18,13 @@ const CustomerHomePage: React.FC = () => {
   const favoriteProducts = useMemo(() => featuredProducts.slice(0, 4), [featuredProducts]);
   const heroCards: Array<Product | null> =
     featuredProducts.length > 0 ? featuredProducts : Array.from({ length: 5 }, () => null);
+  const heroCardArcClasses = [
+    'lg:translate-y-9 lg:-rotate-[4deg]',
+    'lg:translate-y-3 lg:-rotate-[2deg]',
+    'lg:-translate-y-3 lg:rotate-0',
+    'lg:translate-y-3 lg:rotate-[2deg]',
+    'lg:translate-y-9 lg:rotate-[4deg]',
+  ];
 
   useEffect(() => {
     if (!selectedProductId && favoriteProducts.length > 0) {
@@ -54,27 +61,29 @@ const CustomerHomePage: React.FC = () => {
           Shop All <ArrowRight className="h-4 w-4" />
         </Link>
 
-        <div className="grid w-full grid-cols-2 items-end gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          {heroCards.map((product, index) => {
-            const imageUrl = product?.images?.[0]?.imageUrl;
-            const name = product?.name || `Frame ${index + 1}`;
+        <div className="w-full overflow-x-auto overflow-y-visible px-4 pb-14 pt-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:px-6 lg:overflow-visible lg:px-0">
+          <div className="mx-auto flex min-w-max items-end justify-start gap-4 sm:gap-5 lg:min-w-0 lg:max-w-7xl lg:justify-center lg:gap-6">
+            {heroCards.map((product, index) => {
+              const imageUrl = product?.images?.[0]?.imageUrl;
+              const name = product?.name || `Frame ${index + 1}`;
 
-            return (
-              <Link
-                key={product?.id || index}
-                to={product?.id ? `/product/${product.id}` : '/products'}
-                className={`group overflow-hidden rounded-2xl bg-[#f4f0ea] shadow-[0_18px_45px_rgba(0,0,0,0.12)] transition hover:-translate-y-2 ${
-                  index % 2 === 0 ? 'lg:translate-y-4' : 'lg:-translate-y-2'
-                }`}
-              >
-                <img
-                  src={imageUrl || heroFallback}
-                  alt={name}
-                  className="aspect-[3/4] h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                />
-              </Link>
-            );
-          })}
+              return (
+                <Link
+                  key={product?.id || index}
+                  to={product?.id ? `/product/${product.id}` : '/products'}
+                  className={`group w-[168px] shrink-0 overflow-hidden rounded-2xl bg-[#f4f0ea] shadow-[0_18px_45px_rgba(0,0,0,0.12)] transition duration-500 hover:-translate-y-2 hover:shadow-[0_24px_60px_rgba(0,0,0,0.16)] sm:w-[210px] md:w-[240px] lg:w-1/5 lg:max-w-[235px] ${
+                    heroCardArcClasses[index] || ''
+                  }`}
+                >
+                  <img
+                    src={imageUrl || heroFallback}
+                    alt={name}
+                    className="aspect-[3/4] h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                  />
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
         <a
