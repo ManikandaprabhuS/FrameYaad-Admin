@@ -5,3 +5,5 @@ export { default as CartPage } from './CartPage';
 export { default as CheckoutPage } from './CheckoutPage';
 export { default as CustomerProfilePage } from './CustomerProfilePage';
 export { default as CustomerOrdersPage } from './CustomerOrdersPage';
+export { default as BookAppointmentPage } from './BookAppointmentPage';
+export { default as ContactUsPage } from './ContactUsPage';

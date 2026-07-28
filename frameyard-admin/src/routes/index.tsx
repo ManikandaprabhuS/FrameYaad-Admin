@@ -6,6 +6,8 @@ import AdminOnlyRoute from '../layouts/AdminOnlyRoute';
 import {
   CartPage,
   CheckoutPage,
+  BookAppointmentPage,
+  ContactUsPage,
   CustomerHomePage,
   CustomerOrdersPage,
   CustomerProductDetailsPage,
@@ -37,6 +39,8 @@ export const router = createBrowserRouter([
       { path: '/checkout', element: <CheckoutPage /> },
       { path: '/profile', element: <CustomerProfilePage /> },
       { path: '/orders', element: <CustomerOrdersPage /> },
+      { path: '/book-appointment', element: <BookAppointmentPage /> },
+      { path: '/contact-us', element: <ContactUsPage /> },
     ],
   },
   {path: '/fyadminlogin',element: <LoginPage />,},
