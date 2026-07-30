@@ -1,11 +1,7 @@
 import React, { FormEvent, useState } from 'react';
 import { BriefcaseBusiness, Camera, LucideIcon, Mail, MapPin, Phone, Send, Share2 } from 'lucide-react';
 import { showError, showSuccess } from '../../../utils/toast';
-import frameWorker1 from '../../../assets/frame_worker_1.png';
-import frameWorker2 from '../../../assets/frame_worker_2.png';
-import frameWorker3 from '../../../assets/frame_worker_3.png';
-import frameWorker4 from '../../../assets/frame_worker_4.png';
-import frameWorker5 from '../../../assets/frame_worker_5.png';
+import footerCraftsmanship from '../../../assets/footer-craftsmanship.png';
 
 interface SocialLink {
   name: string;
@@ -46,80 +42,13 @@ const contactItems: ContactItem[] = [
 const quickLinks = ['Privacy Policy', 'Terms & Conditions', 'Refund Policy'];
 
 const FooterIllustration: React.FC = () => (
-  <div className="relative overflow-hidden bg-white">
-    <svg
-      className="block h-44 w-full sm:h-56 lg:h-64"
-      viewBox="0 0 1440 260"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      role="img"
-      aria-label="FrameYaad handcrafted footer illustration with makers preparing, inspecting, and packaging frames"
-      preserveAspectRatio="xMidYMid slice"
-    >
-      <rect width="1440" height="260" fill="#ffffff" />
-      <defs>
-        <clipPath id="footer-worker-clip-1"><rect x="0" y="50" width="245" height="210" /></clipPath>
-        <clipPath id="footer-worker-clip-2"><rect x="225" y="36" width="275" height="224" /></clipPath>
-        <clipPath id="footer-worker-clip-3"><rect x="500" y="18" width="330" height="242" /></clipPath>
-        <clipPath id="footer-worker-clip-4"><rect x="820" y="34" width="292" height="226" /></clipPath>
-        <clipPath id="footer-worker-clip-5"><rect x="1095" y="34" width="300" height="226" /></clipPath>
-      </defs>
-      <path
-        d="M0 143C92 182 191 188 296 149C391 114 488 105 594 134C701 164 809 181 932 148C1055 115 1144 111 1261 146C1335 168 1393 162 1440 139V260H0V143Z"
-        fill="#111827"
-      />
-
-      <image
-        href={frameWorker1}
-        x="0"
-        y="65"
-        width="245"
-        height="245"
-        preserveAspectRatio="xMinYMax meet"
-        clipPath="url(#footer-worker-clip-1)"
-      />
-      <image
-        href={frameWorker2}
-        x="228"
-        y="44"
-        width="310"
-        height="245"
-        preserveAspectRatio="xMidYMax meet"
-        clipPath="url(#footer-worker-clip-2)"
-      />
-      <image
-        href={frameWorker3}
-        x="500"
-        y="26"
-        width="360"
-        height="250"
-        preserveAspectRatio="xMidYMax meet"
-        clipPath="url(#footer-worker-clip-3)"
-      />
-      <image
-        href={frameWorker4}
-        x="822"
-        y="42"
-        width="330"
-        height="250"
-        preserveAspectRatio="xMidYMax meet"
-        clipPath="url(#footer-worker-clip-4)"
-      />
-      <image
-        href={frameWorker5}
-        x="1094"
-        y="42"
-        width="342"
-        height="250"
-        preserveAspectRatio="xMaxYMax meet"
-        clipPath="url(#footer-worker-clip-5)"
-      />
-
-      <path
-        d="M0 249H1440V260H0V249Z"
-        fill="#111827"
-      />
-    </svg>
+  <div className="relative overflow-hidden bg-black">
+    <img
+      src={footerCraftsmanship}
+      alt="FrameYaad handcrafted framing process illustration"
+      loading="lazy"
+      className="mx-auto block h-[150px] w-full object-contain object-center sm:h-[210px] lg:h-[260px]"
+    />
     <div className="sr-only">
       <span>FrameYaad craftsmanship process: frame crafting, photo framing, quality inspection, and packaging.</span>
     </div>
