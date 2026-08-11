@@ -41,7 +41,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
     >
       <div className="flex justify-between items-start mb-4">
         <span className="text-xs font-semibold uppercase text-on-surface-variant tracking-wider">{title}</span>
-        <div className="p-2 bg-primary-fixed text-primary rounded-lg dark:bg-gray-800 dark:text-primary">
+        <div className="rounded-lg border border-outline-variant bg-white p-2 text-black shadow-sm">
           <Icon className="w-5 h-5" />
         </div>
       </div>

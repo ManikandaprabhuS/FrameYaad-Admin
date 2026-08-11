@@ -12,9 +12,12 @@ interface CustomerState {
 
   fetchCustomers: (
     page?: number,
-    limit?: number
+    limit?: number,
+    search?: string
   ) => Promise<void>;
 }
+
+let customersRequestId = 0;
 
 export const useCustomerStore = create<CustomerState>((set) => ({
   customers: [],
@@ -26,8 +29,10 @@ export const useCustomerStore = create<CustomerState>((set) => ({
 
   fetchCustomers: async (
     page = 1,
-    limit = 10
+    limit = 10,
+    search
   ) => {
+    const requestId = ++customersRequestId;
     set({
       loading: true,
       error: null,
@@ -37,8 +42,11 @@ export const useCustomerStore = create<CustomerState>((set) => ({
       const data =
         await customerService.getCustomers(
           page,
-          limit
+          limit,
+          search
         );
+
+      if (requestId !== customersRequestId) return;
 
       set({
         customers: data.customers,
@@ -49,6 +57,7 @@ export const useCustomerStore = create<CustomerState>((set) => ({
       });
 
     } catch (err: any) {
+      if (requestId !== customersRequestId) return;
       set({
         error:
           err.response?.data?.message ||

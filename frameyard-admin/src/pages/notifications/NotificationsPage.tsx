@@ -1,31 +1,29 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNotifications } from '../../hooks/useNotifications';
-import { Bell, CheckCircle2, AlertTriangle, Info, XCircle, Check } from 'lucide-react';
+import { Bell, CheckCircle2, Info, Check } from 'lucide-react';
 
 export const NotificationsPage: React.FC = () => {
-  const { notifications, loading, markAllAsRead, toggleNotificationRead, removeNotification } = useNotifications(true);
+  const { notifications, loading, markAllAsRead, toggleNotificationRead, removeNotification } = useNotifications(false);
   const [filter, setFilter] = useState<'all' | 'read' | 'unread'>('all');
 
-  const totalCount = notifications.length;
-  const unreadCount = notifications.filter((n) => !n.read).length;
-  const readCount = notifications.filter((n) => n.read).length;
+  const { totalCount, unreadCount, readCount } = useMemo(() => ({
+    totalCount: notifications.length,
+    unreadCount: notifications.filter((n) => !n.read).length,
+    readCount: notifications.filter((n) => n.read).length,
+  }), [notifications]);
 
-  const filteredNotifications = notifications.filter((n) => {
+  const filteredNotifications = useMemo(() => notifications.filter((n) => {
     if (filter === 'all') return true;
     if (filter === 'unread') return !n.read;
     if (filter === 'read') return n.read;
     return true;
-  });
+  }), [notifications, filter]);
 
   const getIconForType = (type: string) => {
     switch (type) {
-      case 'success':
+      case 'ORDER_PLACED':
         return <CheckCircle2 className="w-5 h-5 text-green-500" />;
-      case 'warning':
-        return <AlertTriangle className="w-5 h-5 text-amber-500" />;
-      case 'error':
-        return <XCircle className="w-5 h-5 text-red-500" />;
-      case 'info':
+      case 'ACCOUNT_CREATED':
       default:
         return <Info className="w-5 h-5 text-blue-500" />;
     }
@@ -117,13 +115,20 @@ export const NotificationsPage: React.FC = () => {
                 <p className={`text-sm mt-1 ${notification.read ? 'text-on-surface-variant' : 'text-on-surface'}`}>
                   {notification.message}
                 </p>
+                {notification.readBy && (
+                  <p className="mt-2 text-xs font-medium text-on-surface-variant">
+                    Read by {notification.readBy.name} ({notification.readBy.role})
+                  </p>
+                )}
                 <div className="flex gap-4 mt-3">
-                  <button
-                    onClick={() => toggleNotificationRead(notification.id)}
-                    className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-                  >
-                    {notification.read ? 'Mark as unread' : 'Mark as read'}
-                  </button>
+                  {!notification.read && (
+                    <button
+                      onClick={() => toggleNotificationRead(notification.id)}
+                      className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                    >
+                      Mark as read
+                    </button>
+                  )}
                   <button
                     onClick={() => removeNotification(notification.id)}
                     className="text-xs font-semibold text-error hover:text-error/80 transition-colors"

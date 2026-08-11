@@ -5,6 +5,7 @@ export { default as ProductDetailsPage } from '../../../pages/products/ProductDe
 export { default as OrdersPage } from '../../../pages/orders/OrdersPage';
 export { default as CustomersPage } from '../../../pages/customers/CustomersPage';
 export { default as CustomerDetailsPage } from '../../../pages/customers/CustomerDetailsPage';
+export { default as WishlistAnalyticsPage } from '../../../pages/wishlist/WishlistAnalyticsPage';
 export { default as NotificationsPage } from '../../../pages/notifications/NotificationsPage';
 export { default as ProfilePage } from '../../../pages/profile/ProfilePage';
 export { default as SettingsPage } from '../../../pages/settings/SettingsPage';

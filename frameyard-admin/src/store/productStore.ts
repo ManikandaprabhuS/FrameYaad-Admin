@@ -1,14 +1,16 @@
 import { create } from 'zustand';
 import { Product } from '../types';
-import { ProductPayload, productService, VariantPayload } from '../services/product.service';
+import type { Pagination } from '../services/contracts';
+import { ProductListParams, ProductPayload, productService, VariantPayload } from '../services/product.service';
 
 interface ProductState {
   products: Product[];
   currentProduct: Product | null;
   loading: boolean;
+  pagination: Pagination;
   error: string | null;
-  fetchProducts: () => Promise<void>;
-  fetchProductById: (id: string) => Promise<void>;
+  fetchProducts: (params?: ProductListParams) => Promise<void>;
+  fetchProductById: (id: string, publicCatalog?: boolean) => Promise<void>;
   addProduct: (product: ProductPayload) => Promise<Product | null>;
   editProduct: (id: string, product: ProductPayload) => Promise<boolean>;
   addVariant: (productId: string, variant: VariantPayload) => Promise<boolean>;
@@ -17,26 +19,32 @@ interface ProductState {
   clearCurrentProduct: () => void;
 }
 
+let productsRequestId = 0;
+
 export const useProductStore = create<ProductState>((set) => ({
   products: [],
   currentProduct: null,
   loading: false,
+  pagination: { page: 1, limit: 10, total: 0, totalPages: 1 },
   error: null,
 
-  fetchProducts: async () => {
+  fetchProducts: async (params = {}) => {
+    const requestId = ++productsRequestId;
     set({ loading: true, error: null });
     try {
-      const data = await productService.getProducts();
-      set({ products: data, loading: false });
+      const data = await productService.getProducts(params);
+      if (requestId !== productsRequestId) return;
+      set({ products: data.products, pagination: data.pagination, loading: false });
     } catch (err: any) {
+      if (requestId !== productsRequestId) return;
       set({ error: err.response?.data?.message || 'Failed to fetch products', loading: false });
     }
   },
 
-  fetchProductById: async (id: string) => {
+  fetchProductById: async (id: string, publicCatalog = false) => {
     set({ loading: true, error: null });
     try {
-      const product = await productService.getProductById(id);
+      const product = await productService.getProductById(id, publicCatalog);
       set({ currentProduct: product, loading: false });
     } catch (err: any) {
       set({ error: err.response?.data?.message || 'Failed to fetch product', loading: false });

@@ -39,7 +39,7 @@ interface AuthState {
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   updateProfile: (profileData: Partial<User>) => Promise<boolean>;
-  changePassword: (password: string) => Promise<boolean>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   clearError: () => void;
 }
 
@@ -62,15 +62,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         password
       );
 
-    if (!response.success) {
-  set({
-    error: response.message || "Login failed",
-    loading: false,
-  });
-  return false;
-}
 const user = response.user;
-const token = response.token ?? null;
+const token = null;
 
 if (user?.role === 'CUSTOMER') {
   clearStoredAuthToken();
@@ -172,11 +165,12 @@ if (token) {
     }
   },
 
-  changePassword: async (password) => {
+  changePassword: async (currentPassword, newPassword) => {
     set({ loading: true, error: null });
     try {
-      await authService.changePassword(password);
-      set({ loading: false });
+      await authService.changePassword(currentPassword, newPassword);
+      clearStoredAuthToken();
+      set({ user: null, token: null, isAuthenticated: false, loading: false });
       return true;
     } catch (err: any) {
       set({ error: err.response?.data?.message || 'Password update failed', loading: false });

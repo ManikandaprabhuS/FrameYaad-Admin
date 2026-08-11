@@ -9,7 +9,7 @@ const CustomerProductDetailsPage: React.FC = () => {
 
   useEffect(() => {
     if (slug) {
-      fetchProductById(slug);
+      fetchProductById(slug, true);
     }
 
     return () => clearCurrentProduct();

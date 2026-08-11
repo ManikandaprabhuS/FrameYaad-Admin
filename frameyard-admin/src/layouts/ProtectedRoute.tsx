@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
+import { LoaderCircle } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
-import loadingGif from '../assets/icons8-loading.gif';
 
 export const ProtectedRoute: React.FC = () => {
   const user = useAuthStore((state) => state.user);
@@ -16,7 +16,9 @@ export const ProtectedRoute: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-        <img src={loadingGif} alt="Loading" className="h-14 w-14 object-contain" />
+        <div className="flex h-14 w-14 items-center justify-center rounded-full border border-outline-variant bg-white shadow-sm">
+          <LoaderCircle aria-label="Loading" className="h-7 w-7 animate-spin text-black" />
+        </div>
         <p className="mt-4 text-sm font-medium text-secondary animate-pulse">Checking credentials...</p>
       </div>
     );

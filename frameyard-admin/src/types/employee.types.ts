@@ -3,6 +3,7 @@ export interface Employee {
   employeeId?: string | null;
   name: string;
   email: string;
+  phoneNumber?: string | null;
   designation?: string | null;
   department?: string | null;
   role: 'EMPLOYEE';
@@ -16,15 +17,13 @@ export interface Employee {
 export type EmployeePayload = {
   name: string;
   email: string;
-  designation: string;
-  department: string;
+  phoneNumber?: string;
   password: string;
 };
 
 export type EmployeeUpdatePayload = {
   name: string;
-  designation: string;
-  department: string;
+  phoneNumber?: string;
 };
 
 export type EmployeeQuery = {
@@ -32,5 +31,4 @@ export type EmployeeQuery = {
   limit?: number;
   search?: string;
   status?: string;
-  department?: string;
 };

@@ -18,13 +18,17 @@ import {
   HelpCircle, 
   LogOut,
   ChevronRight,
-  IdCard
+  IdCard,
+  Heart,
+  TicketPercent,
+  BadgePercent,
 } from 'lucide-react';
 
 export const AdminLayout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -59,6 +63,8 @@ export const AdminLayout: React.FC = () => {
     );
   };
 
+  const isLikelyOrderNumber = (value: string) => /^FY-\d{4}$/i.test(value.trim());
+
   const handleGlobalSearch = async (rawValue: string) => {
     const value = rawValue.trim();
 
@@ -78,7 +84,12 @@ export const AdminLayout: React.FC = () => {
       }
     }
 
-    navigate(`/admin/orders?search=${encodeURIComponent(value)}`);
+    if (isLikelyOrderNumber(value)) {
+      navigate(`/admin/orders?search=${encodeURIComponent(value)}`);
+      return;
+    }
+
+    navigate(`/admin/customers?search=${encodeURIComponent(value)}`);
   };
 
   const submitGlobalSearch = async (value: string) => {
@@ -91,10 +102,13 @@ export const AdminLayout: React.FC = () => {
     { name: 'Products', path: '/admin/products', icon: Package },
     { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
     { name: 'Customers', path: '/admin/customers', icon: Users },
+    { name: 'Wishlists', path: '/admin/wishlists', icon: Heart },
+    { name: 'Coupons', path: '/admin/marketing/coupons', icon: TicketPercent, adminOnly: true },
+    { name: 'Product Discounts', path: '/admin/marketing/product-discounts', icon: BadgePercent, adminOnly: true },
     { name: 'Notifications', path: '/admin/notifications', icon: Bell },
     { name: 'Employees', path: '/admin/employees', icon: IdCard, adminOnly: true },
     { name: 'Profile', path: '/admin/profile', icon: User },
-    { name: 'Settings', path: '/admin/settings', icon: Settings, adminOnly: true },
+    { name: 'Settings', path: '/admin/settings', icon: Settings },
   ].filter((link) => !link.adminOnly || user?.role === 'ADMIN');
 
   // Breadcrumb generator
@@ -117,7 +131,7 @@ export const AdminLayout: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="min-h-screen bg-background flex text-on-background">
+    <div className="admin-monochrome min-h-screen bg-background flex text-on-background">
       
       {/* ------------------------------------------------------------- */}
       {/* DESKTOP SIDEBAR */}
@@ -293,12 +307,25 @@ export const AdminLayout: React.FC = () => {
                 className="bg-transparent border-none focus:ring-0 text-xs text-on-surface w-full p-0 placeholder-on-surface-variant/60 focus:outline-none"
                 placeholder="Search orders, customers..."
                 type="text"
+                value={globalSearch}
+                onChange={(event) => setGlobalSearch(event.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     void submitGlobalSearch(e.currentTarget.value);
                   }
                 }}
               />
+              {globalSearch && (
+                <button
+                  type="button"
+                  onClick={() => setGlobalSearch('')}
+                  className="ml-2 rounded-full p-0.5 text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
+                  aria-label="Clear search"
+                  title="Clear search"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
 
             <button

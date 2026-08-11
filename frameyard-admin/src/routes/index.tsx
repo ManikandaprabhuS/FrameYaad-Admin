@@ -1,36 +1,42 @@
+import React, { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import ProtectedRoute from '../layouts/ProtectedRoute';
 import AdminLayout from '../layouts/AdminLayout';
-import CustomerLayout from '../layouts/CustomerLayout';
 import AdminOnlyRoute from '../layouts/AdminOnlyRoute';
-import {
-  CartPage,
-  CheckoutPage,
-  BookAppointmentPage,
-  ContactUsPage,
-  CustomerHomePage,
-  CustomerOrdersPage,
-  CustomerProductDetailsPage,
-  CustomerProductsPage,
-  CustomerProfilePage,
-} from '../features/customer';
-import {
-  CustomerDetailsPage,
-  CustomersPage,
-  EmployeesPage,
-  LoginPage,
-  NotificationsPage,
-  OrdersPage,
-  OverviewPage,
-  ProductDetailsPage,
-  ProductsPage,
-  ProfilePage,
-  SettingsPage,
-} from '../features/admin';
+import CustomerLayout from '../layouts/CustomerLayout';
+const LoginPage = lazy(() => import('../pages/auth/LoginPage'));
+const OverviewPage = lazy(() => import('../pages/overview/OverviewPage'));
+const ProductsPage = lazy(() => import('../pages/products/ProductsPage'));
+const ProductDetailsPage = lazy(() => import('../pages/products/ProductDetailsPage'));
+const OrdersPage = lazy(() => import('../pages/orders/OrdersPage'));
+const CustomersPage = lazy(() => import('../pages/customers/CustomersPage'));
+const CustomerDetailsPage = lazy(() => import('../pages/customers/CustomerDetailsPage'));
+const NotificationsPage = lazy(() => import('../pages/notifications/NotificationsPage'));
+const ProfilePage = lazy(() => import('../pages/profile/ProfilePage'));
+const SettingsPage = lazy(() => import('../pages/settings/SettingsPage'));
+const EmployeesPage = lazy(() => import('../pages/employees/EmployeesPage'));
+const WishlistAnalyticsPage = lazy(() => import('../pages/wishlist/WishlistAnalyticsPage'));
+const CouponsPage = lazy(() => import('../pages/marketing/coupon/CouponReferencePages').then(module => ({ default: module.CouponReferenceList })));
+const CouponDetails = lazy(() => import('../pages/marketing/coupon/CouponReferencePages').then(module => ({ default: module.CouponReferenceDetails })));
+const CouponDynamicWizard = lazy(() => import('../pages/marketing/coupon/CouponDynamicWizard').then(module => ({ default: module.CouponDynamicWizard })));
+const ProductDiscountsPage = lazy(() => import('../pages/marketing/product-discount/ProductDiscountPages').then(module => ({ default: module.ProductDiscountsPage })));
+const ProductDiscountWizard = lazy(() => import('../pages/marketing/product-discount/ProductDiscountPages').then(module => ({ default: module.ProductDiscountWizard })));
+const ProductDiscountDetails = lazy(() => import('../pages/marketing/product-discount/ProductDiscountPages').then(module => ({ default: module.ProductDiscountDetails })));
+const CustomerHomePage = lazy(() => import('../features/customer/pages/CustomerHomePage'));
+const CustomerProductsPage = lazy(() => import('../features/customer/pages/CustomerProductsPage'));
+const CustomerProductDetailsPage = lazy(() => import('../features/customer/pages/CustomerProductDetailsPage'));
+const CartPage = lazy(() => import('../features/customer/pages/CartPage'));
+const CheckoutPage = lazy(() => import('../features/customer/pages/CheckoutPage'));
+const CustomerProfilePage = lazy(() => import('../features/customer/pages/CustomerProfilePage'));
+const CustomerOrdersPage = lazy(() => import('../features/customer/pages/CustomerOrdersPage'));
+const BookAppointmentPage = lazy(() => import('../features/customer/pages/BookAppointmentPage'));
+const ContactUsPage = lazy(() => import('../features/customer/pages/ContactUsPage'));
+const LazyFallback = <div className="min-h-[240px] animate-pulse p-8 text-sm text-secondary">Loading…</div>;
+const lazyElement = (element: React.ReactNode) => <Suspense fallback={LazyFallback}>{element}</Suspense>;
 
 export const router = createBrowserRouter([
   {
-    element: <CustomerLayout />,
+    element: <Suspense fallback={LazyFallback}><CustomerLayout /></Suspense>,
     children: [
       { path: '/', element: <CustomerHomePage /> },
       { path: '/products', element: <CustomerProductsPage /> },
@@ -43,12 +49,12 @@ export const router = createBrowserRouter([
       { path: '/contact-us', element: <ContactUsPage /> },
     ],
   },
-  {path: '/fyadminlogin',element: <LoginPage />,},
+  {path: '/fyadminlogin',element: lazyElement(<LoginPage />),},
   {path: '/login',element: <Navigate to="/fyadminlogin" replace />,},
   {path: '/admin',element: <ProtectedRoute />,
     children: [
       {
-        element: <AdminLayout />,
+        element: <Suspense fallback={LazyFallback}><AdminLayout /></Suspense>,
         children: [
           {
             path: '',
@@ -75,6 +81,14 @@ export const router = createBrowserRouter([
             element: <OrdersPage />,
           },
           {
+            path: 'wishlists',
+            element: <WishlistAnalyticsPage />,
+          },
+          {
+            path: 'notifications',
+            element: <NotificationsPage />,
+          },
+          {
             path: 'customers',
             element: <CustomersPage />,
           },
@@ -83,21 +97,25 @@ export const router = createBrowserRouter([
             element: <CustomerDetailsPage />,
           },
           {
-            path: 'notifications',
-            element: <NotificationsPage />,
-          },
-          {
             element: <AdminOnlyRoute />,
             children: [
               {
                 path: 'employees',
                 element: <EmployeesPage />,
               },
-              {
-                path: 'settings',
-                element: <SettingsPage />,
-              },
+              { path: 'marketing/coupons', element: <CouponsPage /> },
+              { path: 'marketing/coupons/new', element: <CouponDynamicWizard /> },
+              { path: 'marketing/coupons/:id', element: <CouponDetails /> },
+              { path: 'marketing/coupons/:id/edit', element: <CouponDynamicWizard /> },
+              { path: 'marketing/product-discounts', element: <ProductDiscountsPage /> },
+              { path: 'marketing/product-discounts/new', element: <ProductDiscountWizard /> },
+              { path: 'marketing/product-discounts/:id', element: <ProductDiscountDetails /> },
+              { path: 'marketing/product-discounts/:id/edit', element: <ProductDiscountWizard /> },
             ],
+          },
+          {
+            path: 'settings',
+            element: <SettingsPage />,
           },
           {
             path: 'profile',

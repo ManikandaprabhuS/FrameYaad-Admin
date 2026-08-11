@@ -42,12 +42,12 @@ const contactItems: ContactItem[] = [
 const quickLinks = ['Privacy Policy', 'Terms & Conditions', 'Refund Policy'];
 
 const FooterIllustration: React.FC = () => (
-  <div className="relative overflow-hidden bg-black">
+  <div className="relative overflow-hidden bg-white">
     <img
       src={footerCraftsmanship}
       alt="FrameYaad handcrafted framing process illustration"
       loading="lazy"
-      className="mx-auto block h-[150px] w-full object-contain object-center sm:h-[210px] lg:h-[260px]"
+      className="block h-[150px] w-full object-cover object-bottom sm:h-[190px] md:h-[220px] lg:h-auto"
     />
     <div className="sr-only">
       <span>FrameYaad craftsmanship process: frame crafting, photo framing, quality inspection, and packaging.</span>
@@ -74,15 +74,15 @@ const Footer: React.FC = () => {
     <footer className="animate-fade-in bg-white">
       <FooterIllustration />
 
-      <div className="-mt-px rounded-t-[2rem] bg-[#111827] text-white sm:rounded-t-[2.5rem]">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
-          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3 lg:gap-14">
+      <div className="relative -mt-2 bg-[#090909] text-white">
+        <div className="mx-auto max-w-7xl px-4 pb-10 pt-5 sm:px-6 sm:pb-12 sm:pt-6 lg:px-8 lg:pb-16 lg:pt-8">
+          <div className="grid gap-9 sm:gap-10 md:grid-cols-3 md:gap-6 lg:gap-14">
             <section aria-labelledby="newsletter-heading">
-              <h2 id="newsletter-heading" className="text-2xl font-black">Subscribe to our Newsletter</h2>
+              <h2 id="newsletter-heading" className="text-xl font-black sm:text-2xl">Subscribe to our Newsletter</h2>
               <p className="mt-3 max-w-md text-sm leading-6 text-white/60">
                 Get updates on new frame collections, exclusive offers, and product launches.
               </p>
-              <form onSubmit={handleSubscribe} className="mt-6 flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
+              <form onSubmit={handleSubscribe} className="mt-5 flex flex-col gap-3 xl:flex-row">
                 <label htmlFor="footer-newsletter-email" className="sr-only">Email address</label>
                 <input
                   id="footer-newsletter-email"
@@ -94,7 +94,7 @@ const Footer: React.FC = () => {
                 />
                 <button
                   type="submit"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-[#111827] transition hover:-translate-y-0.5 hover:bg-[#f7f3ef] hover:shadow-[0_18px_40px_rgba(255,255,255,0.12)] sm:w-auto"
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-[#111827] transition hover:-translate-y-0.5 hover:bg-[#f7f3ef] hover:shadow-[0_18px_40px_rgba(255,255,255,0.12)] xl:w-auto"
                 >
                   Subscribe <Send className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -102,7 +102,7 @@ const Footer: React.FC = () => {
             </section>
 
             <section aria-labelledby="follow-heading">
-              <h2 id="follow-heading" className="text-2xl font-black">Follow Us</h2>
+              <h2 id="follow-heading" className="text-xl font-black sm:text-2xl">Follow Us</h2>
               <p className="mt-3 text-sm leading-6 text-white/60">Stay close to our latest handcrafted frame stories.</p>
               <div className="mt-6 flex gap-3">
                 {socialLinks.map((link) => {
@@ -124,7 +124,7 @@ const Footer: React.FC = () => {
             </section>
 
             <section aria-labelledby="contact-heading">
-              <h2 id="contact-heading" className="text-2xl font-black">Contact Us</h2>
+              <h2 id="contact-heading" className="text-xl font-black sm:text-2xl">Contact Us</h2>
               <div className="mt-6 space-y-5">
                 {contactItems.map((item) => {
                   const Icon = item.icon;
@@ -144,7 +144,7 @@ const Footer: React.FC = () => {
             </section>
           </div>
 
-          <div className="mt-12 border-t border-white/10 pt-6">
+          <div className="mt-10 border-t border-white/10 pt-6 sm:mt-12">
             <div className="flex flex-col gap-5 text-sm text-white/55 md:flex-row md:items-center md:justify-between">
               <p>© 2026 FrameYaad. All Rights Reserved.</p>
               <nav className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6" aria-label="Footer quick links">

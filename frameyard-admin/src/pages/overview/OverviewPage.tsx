@@ -26,9 +26,9 @@ import {
 
 export const OverviewPage: React.FC = () => {
   const navigate = useNavigate();
-  const { products, fetchProducts, loading: loadingProducts } = useProducts(true);
-  const { orders, fetchOrders, loading: loadingOrders } = useOrders(true);
-  const { customers, fetchCustomers, loading: loadingCustomers } = useCustomers(true);
+  const { products, fetchProducts, loading: loadingProducts } = useProducts(false);
+  const { orders, fetchOrders, loading: loadingOrders } = useOrders(false);
+  const { customers, fetchCustomers, loading: loadingCustomers } = useCustomers(false);
   const today = new Date();
   type ReportRange = 'today' | 'week' | 'month' | 'year' | 'custom';
   const [reportRange, setReportRange] = useState<ReportRange>('month');
@@ -38,10 +38,16 @@ export const OverviewPage: React.FC = () => {
   const [reportToDate, setReportToDate] = useState(today.toISOString().slice(0, 10));
 
   useEffect(() => {
-    fetchProducts();
-    fetchOrders({ page: 1, limit: 1000, dateFilter: 'all' });
-    fetchCustomers();
-  }, [fetchProducts, fetchOrders, fetchCustomers]);
+    if (products.length === 0) {
+      fetchProducts();
+    }
+    if (orders.length === 0) {
+      fetchOrders({ page: 1, limit: 200, dateFilter: 'all' });
+    }
+    if (customers.length === 0) {
+      fetchCustomers();
+    }
+  }, [fetchCustomers, fetchOrders, fetchProducts]);
 
   const reportDateRange = useMemo(() => {
     const now = new Date();
@@ -278,7 +284,7 @@ export const OverviewPage: React.FC = () => {
   const displayLowStock = lowStockAlerts;
 
   // Order Fulfillment quantities
-  const pendingCount = orders.filter(o => o.orderStatus === 'PENDING').length;
+  const pendingCount = orders.filter(o => o.orderStatus === 'PLACED').length;
   const processingCount = orders.filter(o => o.orderStatus === 'PROCESSING').length;
   const shippedCount = orders.filter(o => o.orderStatus === 'SHIPPED').length;
   const deliveredCount = orders.filter(o => o.orderStatus === 'DELIVERED').length;
@@ -293,7 +299,7 @@ export const OverviewPage: React.FC = () => {
         return <Badge type="success">Delivered</Badge>;
       case 'PROCESSING':
         return <Badge type="info">Processing</Badge>;
-      case 'PENDING':
+      case 'PLACED':
         return <Badge type="warning">Pending</Badge>;
       case 'CANCELLED':
         return <Badge type="error">Cancelled</Badge>;
@@ -428,9 +434,9 @@ export const OverviewPage: React.FC = () => {
         <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)] flex flex-col">
           <h3 className="text-sm font-bold text-on-surface uppercase tracking-wider mb-6">Order Fulfillment</h3>
           <div className="flex-1 flex flex-col gap-3">
-            <div className="flex items-center justify-between p-3 rounded-lg border border-outline-variant hover:bg-surface-container transition-colors cursor-pointer" onClick={() => navigateToOrdersByStatus('PENDING')}>
+            <div className="flex items-center justify-between p-3 rounded-lg border border-outline-variant hover:bg-surface-container transition-colors cursor-pointer" onClick={() => navigateToOrdersByStatus('PLACED')}>
               <div className="flex items-center gap-3">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                <span className="h-2.5 w-2.5 rounded-full shadow-sm" style={{ backgroundColor: '#f59e0b' }} />
                 <span className="text-xs font-semibold text-on-surface">Pending Payment</span>
               </div>
               <span className="text-xs font-bold text-on-surface">{pendingCount}</span>
@@ -438,7 +444,7 @@ export const OverviewPage: React.FC = () => {
             
             <div className="flex items-center justify-between p-3 rounded-lg border border-outline-variant hover:bg-surface-container transition-colors cursor-pointer" onClick={() => navigateToOrdersByStatus('PROCESSING')}>
               <div className="flex items-center gap-3">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                <span className="h-2.5 w-2.5 rounded-full shadow-sm" style={{ backgroundColor: '#3b82f6' }} />
                 <span className="text-xs font-semibold text-on-surface">Processing</span>
               </div>
               <span className="text-xs font-bold text-on-surface">{processingCount}</span>
@@ -446,7 +452,7 @@ export const OverviewPage: React.FC = () => {
 
             <div className="flex items-center justify-between p-3 rounded-lg border border-outline-variant hover:bg-surface-container transition-colors cursor-pointer" onClick={() => navigateToOrdersByStatus('SHIPPED')}>
               <div className="flex items-center gap-3">
-                <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                <span className="h-2.5 w-2.5 rounded-full shadow-sm" style={{ backgroundColor: '#16a34a' }} />
                 <span className="text-xs font-semibold text-on-surface">Shipped</span>
               </div>
               <span className="text-xs font-bold text-on-surface">{shippedCount}</span>
@@ -454,7 +460,7 @@ export const OverviewPage: React.FC = () => {
 
             <div className="flex items-center justify-between p-3 rounded-lg border border-outline-variant hover:bg-surface-container transition-colors cursor-pointer" onClick={() => navigateToOrdersByStatus('DELIVERED')}>
               <div className="flex items-center gap-3">
-                <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+                <span className="h-2.5 w-2.5 rounded-full shadow-sm" style={{ backgroundColor: '#1d4ed8' }} />
                 <span className="text-xs font-semibold text-on-surface">Delivered</span>
               </div>
               <span className="text-xs font-bold text-on-surface">{deliveredCount}</span>
@@ -462,7 +468,7 @@ export const OverviewPage: React.FC = () => {
 
             <div className="flex items-center justify-between p-3 rounded-lg border border-outline-variant hover:bg-surface-container transition-colors cursor-pointer mt-auto" onClick={() => navigateToOrdersByStatus('CANCELLED')}>
               <div className="flex items-center gap-3">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-500 block"/>
+                <span className="block h-2.5 w-2.5 rounded-full shadow-sm" style={{ backgroundColor: '#ef3340' }} />
                 <span className="text-xs font-semibold text-on-surface">Cancelled</span>
               </div>
               <span className="text-xs font-bold text-on-surface">{cancelledCount}</span>
@@ -547,3 +553,4 @@ export const OverviewPage: React.FC = () => {
 };
 
 export default OverviewPage;
+

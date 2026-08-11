@@ -14,9 +14,10 @@ const emptyProfileForm = {
 };
 
 export const ProfilePage: React.FC = () => {
-  const { user, updateProfile, changePassword } = useAuth();
+  const { user, updateProfile, changePassword, error: authError } = useAuth();
   const [formData, setFormData] = useState(emptyProfileForm);
   const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
     password: '',
     confirmPassword: '',
   });
@@ -40,7 +41,7 @@ export const ProfilePage: React.FC = () => {
     if (success) {
       showSuccess('Profile updated successfully');
     } else {
-      showError('Failed to update profile');
+      showError(authError || 'Failed to update profile');
     }
   };
 
@@ -55,11 +56,16 @@ export const ProfilePage: React.FC = () => {
       return;
     }
 
-    const success = await changePassword(passwordData.password);
+    if (!passwordData.currentPassword) {
+      showError('Current password is required');
+      return;
+    }
+
+    const success = await changePassword(passwordData.currentPassword, passwordData.password);
 
     if (success) {
-      setPasswordData({ password: '', confirmPassword: '' });
-      showSuccess('Password updated successfully');
+      setPasswordData({ currentPassword: '', password: '', confirmPassword: '' });
+      showSuccess('Password updated. Please log in again.');
     } else {
       showError('Failed to update password');
     }
@@ -159,6 +165,13 @@ export const ProfilePage: React.FC = () => {
               <h3 className="text-sm font-bold uppercase tracking-wider text-on-surface">Change Password</h3>
               <p className="mt-1 text-xs text-on-surface-variant">Use this after logging in with a generated temporary password.</p>
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <input
+                  type="password"
+                  value={passwordData.currentPassword}
+                  onChange={(event) => setPasswordData({ ...passwordData, currentPassword: event.target.value })}
+                  className="w-full px-4 py-2.5 bg-surface border border-outline-variant rounded-xl text-sm"
+                  placeholder="Current password"
+                />
                 <input
                   type="password"
                   value={passwordData.password}

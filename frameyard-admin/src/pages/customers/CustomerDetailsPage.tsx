@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CalendarDays, ChevronDown, ChevronUp, Mail, MapPin, Phone, ShoppingCart, UserRound } from 'lucide-react';
 import Badge from '../../components/ui/Badge';
 import { Customer, Order } from '../../types';
@@ -10,18 +10,31 @@ type CustomerDetails = Omit<Customer, 'orders'> & {
   orders: Order[];
 };
 
+const normalizeCustomerDetails = (value: CustomerDetails): CustomerDetails => ({
+  ...value,
+  orders: Array.isArray(value.orders)
+    ? value.orders.map((order) => ({
+      ...order,
+      orderNumber: order.orderNumber || order.id,
+      orderItems: Array.isArray(order.orderItems) ? order.orderItems : [],
+    }))
+    : [],
+});
+
 const CustomerDetailsPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams<{ id: string }>();
-  const [customer, setCustomer] = useState<CustomerDetails | null>(null);
-  const [loading, setLoading] = useState(true);
+  const initialCustomer = (location.state as { customer?: CustomerDetails } | null)?.customer ?? null;
+  const [customer, setCustomer] = useState<CustomerDetails | null>(initialCustomer ? normalizeCustomerDetails(initialCustomer) : null);
+  const [loading, setLoading] = useState(!initialCustomer);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   useEffect(() => {
     const loadCustomer = async () => {
       try {
         const data = await customerService.getCustomerById(id as string);
-        setCustomer(data as CustomerDetails);
+        setCustomer(normalizeCustomerDetails(data as CustomerDetails));
       } catch (error) {
         console.error(error);
       } finally {
@@ -29,7 +42,9 @@ const CustomerDetailsPage: React.FC = () => {
       }
     };
 
-    loadCustomer();
+    // The customer list passes a lightweight order summary in route state.
+    // Always hydrate the detail view so expanded orders include their items.
+    if (id) loadCustomer();
   }, [id]);
 
   const totalSpent = useMemo(
@@ -243,7 +258,7 @@ const CustomerDetailsPage: React.FC = () => {
                             onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
                             className="font-semibold text-primary hover:underline"
                           >
-                            {order.orderNumber}
+                            {order.orderNumber || order.id}
                           </button>
                         </td>
                         <td className="px-6 py-4">
@@ -273,7 +288,7 @@ const CustomerDetailsPage: React.FC = () => {
                                 <div>
                                   <h4 className="text-sm font-bold uppercase tracking-wider text-on-surface">Order Items</h4>
                                   <p className="mt-1 text-xs text-on-surface-variant">
-                                    Summary: {order.orderNumber} · {order.orderStatus} · {formatCurrency(Number(order.totalAmount))} · {formatDate(order.createdAt)}
+                                    Summary: {order.orderNumber || order.id} · {order.orderStatus} · {formatCurrency(Number(order.totalAmount))} · {formatDate(order.createdAt)}
                                   </p>
                                 </div>
                               </div>
@@ -292,7 +307,7 @@ const CustomerDetailsPage: React.FC = () => {
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-outline-variant/25">
-                                    {order.orderItems.map((item) => (
+                                    {(Array.isArray(order.orderItems) ? order.orderItems : []).map((item) => (
                                       <tr key={item.id} className="hover:bg-surface/40">
                                         <td className="px-3 py-3 font-semibold text-on-surface">{item.productName}</td>
                                         <td className="px-3 py-3 text-on-surface-variant">{item.frameSize}</td>

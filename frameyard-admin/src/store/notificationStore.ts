@@ -85,14 +85,14 @@ export const useNotificationStore = create<NotificationState>((set) => ({
     const target = originalNotifications.find((n) => n.id === id);
     if (!target) return;
 
-    const newReadStatus = !target.read;
+    const newReadStatus = true;
 
     // Optimistically toggle read status
     set((state) => ({
       notifications: state.notifications.map((n) => (n.id === id ? { ...n, read: newReadStatus } : n)),
     }));
     
-    const message = newReadStatus ? "Marked as read" : "Marked as unread";
+    const message = "Marked as read";
     const toastId = toast.success(message);
 
     try {

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useCustomers } from '../../hooks/useCustomers';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { DataTable } from '../../components/tables/DataTable';
 import Badge from '../../components/ui/Badge';
 import { Search, Download,Mail, Phone, ShoppingBag, MapPin, CheckCircle, XCircle } from 'lucide-react';
 import { Customer } from '../../types';
+import { showError, showSuccess } from '../../utils/toast';
+import { orderService } from '../../services/order.service';
 
 
 
@@ -29,15 +31,21 @@ const getTotalSpent = (customer: Customer) =>
   customer.orders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
 
 export const CustomersPage: React.FC = () => {
- const {  customers,  loading, fetchCustomers} = useCustomers(false);
+ const { customers, loading, totalPages, fetchCustomers } = useCustomers(false);
+  const [searchParams] = useSearchParams();
+  const requestedSearch = searchParams.get('search') ?? '';
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const PAGE_SIZE = 10;
+  const [searchTerm, setSearchTerm] = useState(requestedSearch);
+  const PAGE_SIZE = 8;
   useEffect(() => {
-  fetchCustomers(currentPage, PAGE_SIZE);}, [currentPage, fetchCustomers]);
+  fetchCustomers(currentPage, PAGE_SIZE, requestedSearch);}, [currentPage, fetchCustomers, requestedSearch]);
+  useEffect(() => { setSearchTerm(requestedSearch); setCurrentPage(1); }, [requestedSearch]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const exportCustomerReport = () => {
-
+  const exportCustomerReport = async () => {
+  try {
+  const orderIds = [...new Set(customers.flatMap((customer) => customer.orders.map((order) => order.id)))];
+  const detailedOrders = await Promise.all(orderIds.map((orderId) => orderService.getOrderById(orderId)));
+  const detailsById = new Map(detailedOrders.map((order) => [order.id, order]));
   const rows = customers.flatMap((customer) => {
 
     if (customer.orders.length === 0) {
@@ -60,9 +68,12 @@ export const CustomersPage: React.FC = () => {
       }];
     }
 
-    return customer.orders.flatMap((order: any) => {
-
-      return order.orderItems.map((item: any) => ({
+    return customer.orders.flatMap((summaryOrder: any) => {
+      const order: any = detailsById.get(summaryOrder.id) || summaryOrder;
+      const items = Array.isArray(order.orderItems) && order.orderItems.length > 0
+        ? order.orderItems
+        : [null];
+      return items.map((item: any) => ({
         CustomerName: customer.name,
         Email: customer.email,
         Phone: customer.phoneNumber,
@@ -70,27 +81,28 @@ export const CustomersPage: React.FC = () => {
         City: customer.cityName,
         State: customer.stateName,
 
-        OrderNumber: order.orderNumber,
+        OrderNumber: order.orderNumber || order.id || '',
         OrderStatus: order.orderStatus,
 
-        ProductName: item.productName,
-        FrameSize: item.frameSize,
-        MountType: item.mountType,
-        GlassType: item.glassType,
-        Quantity: item.quantity,
-        Price: item.price,
-        Subtotal: item.subtotal,
+        ProductName: item?.productName || '',
+        FrameSize: item?.frameSize || '',
+        MountType: item?.mountType || '',
+        GlassType: item?.glassType || '',
+        Quantity: item?.quantity ?? '',
+        Price: item?.price ?? order.totalAmount ?? '',
+        Subtotal: item?.subtotal ?? order.totalAmount ?? '',
       }));
 
     });
 
   });
 
+  const columns = ['CustomerName', 'Email', 'Phone', 'Address', 'City', 'State', 'OrderNumber', 'OrderStatus', 'ProductName', 'FrameSize', 'MountType', 'GlassType', 'Quantity', 'Price', 'Subtotal'];
+  const escapeCsv = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
   const csvContent = [
-    Object.keys(rows[0]).join(","),
+    columns.join(","),
     ...rows.map((row) =>
-      Object.values(row)
-        .map(value => `"${value ?? ""}"`)
+      columns.map((column) => escapeCsv((row as Record<string, unknown>)[column]))
         .join(",")
     ),
   ].join("\n");
@@ -118,6 +130,11 @@ export const CustomersPage: React.FC = () => {
   document.body.removeChild(link);
 
   window.URL.revokeObjectURL(url);
+  showSuccess('Customer export downloaded successfully');
+  } catch (error) {
+    console.error('Customer export failed:', error);
+    showError('Unable to export customers');
+  }
 };
 
   const filteredCustomers = customers.filter(
@@ -161,6 +178,7 @@ export const CustomersPage: React.FC = () => {
               <div>
   <Link
     to={`/admin/customers/${customer.id}`}
+    state={{ customer }}
     onClick={(e) => e.stopPropagation()}
     className="font-semibold text-primary hover:underline text-sm"
   >
@@ -300,10 +318,11 @@ export const CustomersPage: React.FC = () => {
               {customer.name.charAt(0)}
             </div>
             <div>
-              <Link
-                to={`/admin/customers/${customer.id}`}
-                className="font-semibold text-sm text-primary hover:underline"
-              >
+            <Link
+              to={`/admin/customers/${customer.id}`}
+              state={{ customer }}
+              className="font-semibold text-sm text-primary hover:underline"
+            >
                 {customer.name}
               </Link>
               <Badge type={getStatusBadgeType(status) as any} className="mt-1 text-[10px]">
@@ -345,6 +364,7 @@ export const CustomersPage: React.FC = () => {
             <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Orders</p>
             <Link
               to={`/admin/customers/${customer.id}`}
+              state={{ customer }}
               className="text-[11px] font-semibold text-primary hover:underline"
             >
               View details
@@ -517,14 +537,13 @@ const growthPercentage =
   </button>
 
   <span className="text-sm font-medium">
-    Page {currentPage}
+    Page {currentPage} of {totalPages}
   </span>
 
   <button
-    onClick={() =>
-      setCurrentPage((prev) => prev + 1)
-    }
-    className="px-4 py-2 border border-outline-variant rounded-lg"
+    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+    disabled={currentPage >= totalPages}
+    className="px-4 py-2 border border-outline-variant rounded-lg disabled:opacity-50"
   >
     Next
   </button>
