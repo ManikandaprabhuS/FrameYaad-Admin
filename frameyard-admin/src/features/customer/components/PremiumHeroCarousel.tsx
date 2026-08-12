@@ -22,8 +22,8 @@ const SNAP_DURATION_MS = 450;
 const AUTOPLAY_INTERVAL_MS = 5000;
 const AUTOPLAY_RESUME_DELAY_MS = 4500;
 
-const getResponsiveViewportWidth = (element?: HTMLElement | null) =>
-  element?.getBoundingClientRect().width || document.documentElement.clientWidth || window.innerWidth;
+const getResponsiveViewportWidth = () =>
+  window.visualViewport?.width || document.documentElement.clientWidth || window.innerWidth;
 
 const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loading = false, error = null }) => {
   const navigate = useNavigate();
@@ -33,7 +33,7 @@ const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loa
   const resetTimerRef = useRef<number | null>(null);
   const resumeTimerRef = useRef<number | null>(null);
   const lastWheelMoveRef = useRef(0);
-  const [viewportWidth, setViewportWidth] = useState(() => getResponsiveViewportWidth());
+  const [viewportWidth, setViewportWidth] = useState(getResponsiveViewportWidth);
   const [position, setPosition] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [transitionEnabled, setTransitionEnabled] = useState(true);
@@ -48,7 +48,7 @@ const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loa
     if (!viewport) return;
 
     const updateWidth = () => {
-      setViewportWidth(getResponsiveViewportWidth(viewport));
+      setViewportWidth(getResponsiveViewportWidth());
     };
     const observer = new ResizeObserver(updateWidth);
     observer.observe(viewport);
