@@ -9,7 +9,8 @@ import {
   X,
 } from 'lucide-react';
 
-import ProductCatalogCard, { getCatalogPricing } from '../components/ProductCatalogCard';
+import ProductCatalogCard from '../components/ProductCatalogCard';
+import { getCatalogPricing } from '../utils/catalog-product';
 import useProducts from '../../../hooks/useProducts';
 import type { Product } from '../../../types';
 
