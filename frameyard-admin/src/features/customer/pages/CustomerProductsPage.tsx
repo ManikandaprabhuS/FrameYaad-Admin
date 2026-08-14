@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ChevronDown,
   ChevronLeft,
@@ -10,14 +10,15 @@ import {
 } from 'lucide-react';
 
 import ProductCatalogCard from '../components/ProductCatalogCard';
-import { getCatalogPricing } from '../utils/catalog-product';
-import useProducts from '../../../hooks/useProducts';
+import { getCatalogPricing, type CatalogPricing } from '../utils/catalog-product';
+import { useProductStore } from '../../../store/productStore';
 import type { Product } from '../../../types';
 
 const PRODUCTS_PER_PAGE = 12;
 
 type SortOption = 'featured' | 'price-low' | 'price-high' | 'newest' | 'name';
 type AvailabilityFilter = 'in-stock' | 'out-of-stock';
+type CatalogEntry = { product: Product; pricing: CatalogPricing; totalStock: number };
 
 const toggleValue = <T,>(values: T[], value: T): T[] =>
   values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
@@ -25,11 +26,11 @@ const toggleValue = <T,>(values: T[], value: T): T[] =>
 const totalStockFor = (product: Product) =>
   (product.variants ?? []).reduce((total, variant) => total + Number(variant.stockQuantity ?? 0), 0);
 
-const productMatchesSize = (product: Product, selectedSizes: string[]) =>
-  selectedSizes.length === 0 || product.variants?.some((variant) => selectedSizes.includes(variant.frameSize));
-
 const CustomerProductsPage: React.FC = () => {
-  const { products, loading, error, fetchProducts } = useProducts(false);
+  const products = useProductStore((state) => state.products);
+  const loading = useProductStore((state) => state.loading);
+  const error = useProductStore((state) => state.error);
+  const fetchProducts = useProductStore((state) => state.fetchProducts);
   const [materials, setMaterials] = useState<string[]>([]);
   const [sizes, setSizes] = useState<string[]>([]);
   const [availability, setAvailability] = useState<AvailabilityFilter[]>([]);
@@ -38,13 +39,23 @@ const CustomerProductsPage: React.FC = () => {
   const [sort, setSort] = useState<SortOption>('featured');
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [wishedProducts, setWishedProducts] = useState<string[]>([]);
+  const [wishedProducts, setWishedProducts] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
-    fetchProducts({ page: 1, limit: 50, isActive: true, publicCatalog: true });
-  }, [fetchProducts]);
+    if (products.length === 0) {
+      fetchProducts({ page: 1, limit: 50, isActive: true, publicCatalog: true });
+    }
+  }, [fetchProducts, products.length]);
 
   const activeProducts = useMemo(() => products.filter((product) => product.isActive), [products]);
+  const catalogEntries = useMemo<CatalogEntry[]>(
+    () => activeProducts.map((product) => ({
+      product,
+      pricing: getCatalogPricing(product),
+      totalStock: totalStockFor(product),
+    })),
+    [activeProducts],
+  );
   const materialOptions = useMemo(
     () => [...new Set(activeProducts.map((product) => product.material).filter(Boolean))].sort(),
     [activeProducts],
@@ -53,36 +64,53 @@ const CustomerProductsPage: React.FC = () => {
     () => [...new Set(activeProducts.flatMap((product) => product.variants?.map((variant) => variant.frameSize) ?? []).filter(Boolean))].sort(),
     [activeProducts],
   );
+  const filterCounts = useMemo(() => {
+    const material = new Map<string, number>();
+    const size = new Map<string, number>();
+    let onSale = 0;
+    let inStock = 0;
+    let outOfStock = 0;
+
+    catalogEntries.forEach(({ product, pricing, totalStock }) => {
+      if (product.material) material.set(product.material, (material.get(product.material) ?? 0) + 1);
+      new Set(product.variants?.map((variant) => variant.frameSize).filter(Boolean) ?? []).forEach((frameSize) => {
+        size.set(frameSize, (size.get(frameSize) ?? 0) + 1);
+      });
+      if (pricing.discount > 0) onSale += 1;
+      if (totalStock > 0) inStock += 1;
+      else outOfStock += 1;
+    });
+
+    return { material, size, onSale, inStock, outOfStock };
+  }, [catalogEntries]);
   const priceCeiling = useMemo(() => {
-    const highestPrice = Math.max(0, ...activeProducts.map((product) => getCatalogPricing(product).currentPrice));
+    const highestPrice = Math.max(0, ...catalogEntries.map(({ pricing }) => pricing.currentPrice));
     return Math.max(500, Math.ceil(highestPrice / 500) * 500);
-  }, [activeProducts]);
+  }, [catalogEntries]);
   const effectiveMaximumPrice = maximumPrice ?? priceCeiling;
 
   const filteredProducts = useMemo(() => {
-    const filtered = activeProducts.filter((product) => {
-      const pricing = getCatalogPricing(product);
-      const stock = totalStockFor(product);
+    const filtered = catalogEntries.filter(({ product, pricing, totalStock }) => {
       const materialMatches = materials.length === 0 || materials.includes(product.material);
       const stockMatches = availability.length === 0
-        || (availability.includes('in-stock') && stock > 0)
-        || (availability.includes('out-of-stock') && stock <= 0);
+        || (availability.includes('in-stock') && totalStock > 0)
+        || (availability.includes('out-of-stock') && totalStock <= 0);
 
       return materialMatches
-        && productMatchesSize(product, sizes)
+        && (sizes.length === 0 || product.variants?.some((variant) => sizes.includes(variant.frameSize)))
         && pricing.currentPrice <= effectiveMaximumPrice
         && (!saleOnly || pricing.discount > 0)
         && stockMatches;
     });
 
     return [...filtered].sort((left, right) => {
-      if (sort === 'price-low') return getCatalogPricing(left).currentPrice - getCatalogPricing(right).currentPrice;
-      if (sort === 'price-high') return getCatalogPricing(right).currentPrice - getCatalogPricing(left).currentPrice;
-      if (sort === 'newest') return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
-      if (sort === 'name') return left.name.localeCompare(right.name);
+      if (sort === 'price-low') return left.pricing.currentPrice - right.pricing.currentPrice;
+      if (sort === 'price-high') return right.pricing.currentPrice - left.pricing.currentPrice;
+      if (sort === 'newest') return new Date(right.product.createdAt).getTime() - new Date(left.product.createdAt).getTime();
+      if (sort === 'name') return left.product.name.localeCompare(right.product.name);
       return 0;
     });
-  }, [activeProducts, availability, effectiveMaximumPrice, materials, saleOnly, sizes, sort]);
+  }, [availability, catalogEntries, effectiveMaximumPrice, materials, saleOnly, sizes, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE));
   const currentPage = Math.min(page, pageCount);
@@ -93,6 +121,15 @@ const CustomerProductsPage: React.FC = () => {
   const startItem = filteredProducts.length === 0 ? 0 : (currentPage - 1) * PRODUCTS_PER_PAGE + 1;
   const endItem = Math.min(currentPage * PRODUCTS_PER_PAGE, filteredProducts.length);
   const activeFilterCount = materials.length + sizes.length + availability.length + Number(saleOnly) + Number(maximumPrice !== null);
+
+  const toggleWishlist = useCallback((productId: string) => {
+    setWishedProducts((current) => {
+      const next = new Set(current);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  }, []);
 
   const updateFilter = (callback: () => void) => {
     callback();
@@ -133,7 +170,7 @@ const CustomerProductsPage: React.FC = () => {
             <CheckRow
               key={material}
               label={material}
-              count={activeProducts.filter((product) => product.material === material).length}
+              count={filterCounts.material.get(material) ?? 0}
               checked={materials.includes(material)}
               onChange={() => updateFilter(() => setMaterials((current) => toggleValue(current, material)))}
             />
@@ -145,7 +182,7 @@ const CustomerProductsPage: React.FC = () => {
             <CheckRow
               key={size}
               label={size}
-              count={activeProducts.filter((product) => product.variants?.some((variant) => variant.frameSize === size)).length}
+              count={filterCounts.size.get(size) ?? 0}
               checked={sizes.includes(size)}
               onChange={() => updateFilter(() => setSizes((current) => toggleValue(current, size)))}
             />
@@ -176,7 +213,7 @@ const CustomerProductsPage: React.FC = () => {
         <FilterSection title="By promotions">
           <CheckRow
             label="On sale"
-            count={activeProducts.filter((product) => getCatalogPricing(product).discount > 0).length}
+            count={filterCounts.onSale}
             checked={saleOnly}
             onChange={() => updateFilter(() => setSaleOnly((current) => !current))}
           />
@@ -185,13 +222,13 @@ const CustomerProductsPage: React.FC = () => {
         <FilterSection title="Availability">
           <CheckRow
             label="In stock"
-            count={activeProducts.filter((product) => totalStockFor(product) > 0).length}
+            count={filterCounts.inStock}
             checked={availability.includes('in-stock')}
             onChange={() => updateFilter(() => setAvailability((current) => toggleValue(current, 'in-stock')))}
           />
           <CheckRow
             label="Out of stock"
-            count={activeProducts.filter((product) => totalStockFor(product) <= 0).length}
+            count={filterCounts.outOfStock}
             checked={availability.includes('out-of-stock')}
             onChange={() => updateFilter(() => setAvailability((current) => toggleValue(current, 'out-of-stock')))}
           />
@@ -223,21 +260,21 @@ const CustomerProductsPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
               <button
                 type="button"
                 onClick={() => setFiltersOpen(true)}
-                className="relative inline-flex h-10 items-center gap-2 rounded-lg border border-black/15 bg-white px-3 text-xs font-bold lg:hidden"
+                className="relative inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-3 text-xs font-bold lg:hidden"
               >
                 <SlidersHorizontal className="h-4 w-4" /> Filters
                 {activeFilterCount > 0 && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-black px-1 text-[10px] text-white">{activeFilterCount}</span>}
               </button>
-              <label className="relative flex h-10 items-center gap-2 rounded-lg border border-black/15 bg-white pl-3 text-[10px] font-semibold text-black/55">
-                Sort by:
+              <label className="relative flex h-11 min-w-0 items-center gap-1 rounded-lg border border-black/15 bg-white pl-3 text-[10px] font-semibold text-black/55 sm:h-10 sm:gap-2">
+                <span className="hidden min-[390px]:inline">Sort by:</span>
                 <select
                   value={sort}
                   onChange={(event) => { setSort(event.target.value as SortOption); setPage(1); }}
-                  className="h-full appearance-none bg-transparent py-0 pl-1 pr-9 text-xs font-bold text-black outline-none"
+                  className="h-full min-w-0 flex-1 appearance-none bg-transparent py-0 pl-0 pr-8 text-[11px] font-bold text-black outline-none sm:pl-1 sm:pr-9 sm:text-xs"
                 >
                   <option value="featured">Featured</option>
                   <option value="price-low">Price: Low to high</option>
@@ -269,7 +306,7 @@ const CustomerProductsPage: React.FC = () => {
               <button type="button" onClick={() => fetchProducts({ page: 1, limit: 50, isActive: true, publicCatalog: true })} className="mt-4 rounded-md bg-black px-4 py-2 text-xs font-bold text-white">Retry</button>
             </div>
           ) : loading ? (
-            <div className="grid grid-cols-2 gap-3 py-6 sm:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 py-6 min-[360px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 12 }, (_, index) => <ProductSkeleton key={index} />)}
             </div>
           ) : paginatedProducts.length === 0 ? (
@@ -280,13 +317,16 @@ const CustomerProductsPage: React.FC = () => {
               <button type="button" onClick={clearFilters} className="mt-4 rounded-md bg-black px-4 py-2 text-xs font-bold text-white">Clear filters</button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 py-6 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
-              {paginatedProducts.map((product) => (
+            <div className="grid grid-cols-1 gap-3 py-6 min-[360px]:grid-cols-2 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+              {paginatedProducts.map(({ product, pricing, totalStock }, index) => (
                 <ProductCatalogCard
                   key={product.id}
                   product={product}
-                  wished={wishedProducts.includes(product.id)}
-                  onToggleWishlist={(productId) => setWishedProducts((current) => toggleValue(current, productId))}
+                  pricing={pricing}
+                  totalStock={totalStock}
+                  wished={wishedProducts.has(product.id)}
+                  priority={currentPage === 1 && index < 4}
+                  onToggleWishlist={toggleWishlist}
                 />
               ))}
             </div>
@@ -295,7 +335,7 @@ const CustomerProductsPage: React.FC = () => {
           {!loading && filteredProducts.length > 0 && (
             <div className="flex flex-col gap-3 border-t border-black/10 py-5 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-black/50">Showing {startItem}–{endItem} of {filteredProducts.length}</p>
-              <div className="flex items-center gap-1.5">
+              <div className="flex max-w-full items-center gap-1.5 overflow-x-auto pb-1">
                 <PageButton label="Previous page" disabled={currentPage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))}><ChevronLeft className="h-4 w-4" /></PageButton>
                 {Array.from({ length: pageCount }, (_, index) => index + 1).map((pageNumber) => (
                   <button

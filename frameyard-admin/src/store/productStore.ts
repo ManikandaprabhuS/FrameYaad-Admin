@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import axios from 'axios';
 import { Product } from '../types';
 import type { Pagination } from '../services/contracts';
 import { ProductListParams, ProductPayload, productService, VariantPayload } from '../services/product.service';
@@ -20,6 +21,12 @@ interface ProductState {
 }
 
 let productsRequestId = 0;
+let productDetailsRequestId = 0;
+
+const getProductErrorMessage = (error: unknown, fallback: string): string => {
+  if (!axios.isAxiosError<{ message?: string; error?: { message?: string } }>(error)) return fallback;
+  return error.response?.data?.error?.message ?? error.response?.data?.message ?? fallback;
+};
 
 export const useProductStore = create<ProductState>((set) => ({
   products: [],
@@ -35,19 +42,22 @@ export const useProductStore = create<ProductState>((set) => ({
       const data = await productService.getProducts(params);
       if (requestId !== productsRequestId) return;
       set({ products: data.products, pagination: data.pagination, loading: false });
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (requestId !== productsRequestId) return;
-      set({ error: err.response?.data?.message || 'Failed to fetch products', loading: false });
+      set({ error: getProductErrorMessage(err, 'Failed to fetch products'), loading: false });
     }
   },
 
   fetchProductById: async (id: string, publicCatalog = false) => {
+    const requestId = ++productDetailsRequestId;
     set({ loading: true, error: null });
     try {
       const product = await productService.getProductById(id, publicCatalog);
+      if (requestId !== productDetailsRequestId) return;
       set({ currentProduct: product, loading: false });
-    } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to fetch product', loading: false });
+    } catch (err: unknown) {
+      if (requestId !== productDetailsRequestId) return;
+      set({ error: getProductErrorMessage(err, 'Failed to fetch product'), loading: false });
     }
   },
 
@@ -60,8 +70,8 @@ export const useProductStore = create<ProductState>((set) => ({
         loading: false,
       }));
       return newProd;
-    } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to add product', loading: false });
+    } catch (err: unknown) {
+      set({ error: getProductErrorMessage(err, 'Failed to add product'), loading: false });
       return null;
     }
   },
@@ -95,8 +105,8 @@ export const useProductStore = create<ProductState>((set) => ({
         };
       });
       return true;
-    } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to update product', loading: false });
+    } catch (err: unknown) {
+      set({ error: getProductErrorMessage(err, 'Failed to update product'), loading: false });
       return false;
     }
   },
@@ -112,8 +122,8 @@ export const useProductStore = create<ProductState>((set) => ({
         loading: false,
       }));
       return true;
-    } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to add variant', loading: false });
+    } catch (err: unknown) {
+      set({ error: getProductErrorMessage(err, 'Failed to add variant'), loading: false });
       return false;
     }
   },
@@ -138,8 +148,8 @@ export const useProductStore = create<ProductState>((set) => ({
         loading: false,
       }));
       return true;
-    } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to update variant', loading: false });
+    } catch (err: unknown) {
+      set({ error: getProductErrorMessage(err, 'Failed to update variant'), loading: false });
       return false;
     }
   },
@@ -162,11 +172,14 @@ export const useProductStore = create<ProductState>((set) => ({
         loading: false,
       }));
       return true;
-    } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to delete variant', loading: false });
+    } catch (err: unknown) {
+      set({ error: getProductErrorMessage(err, 'Failed to delete variant'), loading: false });
       return false;
     }
   },
 
-  clearCurrentProduct: () => set({ currentProduct: null }),
+  clearCurrentProduct: () => {
+    productDetailsRequestId += 1;
+    set({ currentProduct: null, loading: false });
+  },
 }));
