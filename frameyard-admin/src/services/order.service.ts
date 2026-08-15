@@ -12,6 +12,7 @@ type BackendOrderItem = {
     id: string;
     productName: string;
     variant?: { frameSize: string; mountType: string };
+    images?: Array<{ id: string; imageUrl: string }>;
   };
 };
 
@@ -89,6 +90,7 @@ const normalizeOrderItem = (item: BackendOrderItem, order: BackendOrder): OrderI
   quantity: item.quantity,
   price: Number(item.price),
   subtotal: Number(item.subtotal),
+  imageUrl: item.product.images?.[0]?.imageUrl ?? null,
 });
 
 export const normalizeOrder = (order: BackendOrder): Order => ({

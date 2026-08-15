@@ -18,6 +18,7 @@ import type { User } from '../../../types';
 import { showError, showSuccess } from '../../../utils/toast';
 import femaleCustomerAvatar from '../../../assets/customer-avatar-female.svg';
 import maleCustomerAvatar from '../../../assets/customer-avatar-male.svg';
+import CustomerAccountDashboard from '../components/CustomerAccountDashboard';
 
 type AuthMode = 'login' | 'register';
 
@@ -55,6 +56,7 @@ const CustomerProfilePage: React.FC = () => {
   const registerCustomer = useAuthStore((state) => state.registerCustomer);
   const checkAuth = useAuthStore((state) => state.checkAuth);
   const updateProfile = useAuthStore((state) => state.updateProfile);
+  const changePassword = useAuthStore((state) => state.changePassword);
   const logout = useAuthStore((state) => state.logout);
   const clearError = useAuthStore((state) => state.clearError);
   const [mode, setMode] = useState<AuthMode>('login');
@@ -131,6 +133,12 @@ const CustomerProfilePage: React.FC = () => {
       onLogout={async () => {
         await logout();
         showSuccess('You have been logged out');
+      }}
+      onChangePassword={async (currentPassword, newPassword) => {
+        const success = await changePassword(currentPassword, newPassword);
+        if (success) showSuccess('Password updated. Please log in again.');
+        else showError(useAuthStore.getState().error || 'Password update failed');
+        return success;
       }}
     />
   );
@@ -256,7 +264,8 @@ const CustomerAccount: React.FC<{
   error: string | null;
   onUpdate: (values: ProfileValues) => Promise<boolean>;
   onLogout: () => Promise<void>;
-}> = ({ user, loading, error, onUpdate, onLogout }) => {
+  onChangePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
+}> = ({ user, loading, error, onUpdate, onLogout, onChangePassword }) => {
   const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm<ProfileValues>();
   const genderAvatar = user.gender === 'FEMALE'
     ? femaleCustomerAvatar
@@ -276,6 +285,19 @@ const CustomerAccount: React.FC<{
       postalCode: user.postalCode || '',
     });
   }, [reset, user]);
+
+  if (user.role === 'CUSTOMER') {
+    return (
+      <CustomerAccountDashboard
+        user={user}
+        loading={loading}
+        error={error}
+        onUpdate={onUpdate}
+        onLogout={onLogout}
+        onChangePassword={onChangePassword}
+      />
+    );
+  }
 
   return (
     <section className="bg-[#f7f7f5] px-4 py-8 sm:px-6 sm:py-12">

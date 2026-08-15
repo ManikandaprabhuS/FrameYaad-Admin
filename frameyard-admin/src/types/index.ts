@@ -140,6 +140,7 @@ export interface OrderItem {
   quantity: number;
   price: number;
   subtotal: number;
+  imageUrl?: string | null;
 }
 
 export interface Order {
