@@ -1,6 +1,7 @@
 import { create } from 'zustand';
+import axios from 'axios';
 import { User } from '../types';
-import { authService } from '../services/auth.service';
+import { authService, type CustomerRegistrationInput } from '../services/auth.service';
 
 const AUTH_TOKEN_KEY = 'fy_auth_token';
 
@@ -29,6 +30,16 @@ const clearStoredAuthToken = () => {
   localStorage.removeItem(AUTH_TOKEN_KEY);
 };
 
+const getAuthErrorMessage = (error: unknown, fallback: string): string => {
+  if (!axios.isAxiosError<{ message?: string; error?: { message?: string } }>(error)) return fallback;
+  return error.response?.data?.error?.message ?? error.response?.data?.message ?? fallback;
+};
+
+export type CustomerRegistrationResult = {
+  success: boolean;
+  confirmationRequired: boolean;
+};
+
 interface AuthState {
   user: User | null;
   token: string | null;
@@ -36,6 +47,8 @@ interface AuthState {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<boolean>;
+  loginCustomer: (email: string, password: string) => Promise<boolean>;
+  registerCustomer: (input: CustomerRegistrationInput) => Promise<CustomerRegistrationResult>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   updateProfile: (profileData: Partial<User>) => Promise<boolean>;
@@ -88,10 +101,8 @@ if (token) {
       loading: false,
     });
     return true;
-  } catch (err: any) {
-    const errMsg =
-      err.response?.data?.message ||
-      "Login failed";
+  } catch (err: unknown) {
+    const errMsg = getAuthErrorMessage(err, 'Login failed');
     set({
       error: errMsg,
       loading: false,
@@ -99,6 +110,70 @@ if (token) {
     return false;
   }
 },
+
+  loginCustomer: async (email, password) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await authService.customerLogin(email, password);
+      if (response.user.role !== 'CUSTOMER') {
+        clearStoredAuthToken();
+        set({ user: null, token: null, isAuthenticated: false, loading: false, error: 'This account is not a customer account.' });
+        return false;
+      }
+      setStoredAuthToken(response.accessToken);
+      set({
+        user: response.user,
+        token: response.accessToken,
+        isAuthenticated: true,
+        loading: false,
+        error: null,
+      });
+      return true;
+    } catch (err: unknown) {
+      clearStoredAuthToken();
+      set({
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        loading: false,
+        error: getAuthErrorMessage(err, 'Email or password is incorrect'),
+      });
+      return false;
+    }
+  },
+
+  registerCustomer: async (input) => {
+    set({ loading: true, error: null });
+    try {
+      const registration = await authService.registerCustomer(input);
+      if (registration.emailConfirmationRequired) {
+        clearStoredAuthToken();
+        set({ user: null, token: null, isAuthenticated: false, loading: false, error: null });
+        return { success: true, confirmationRequired: true };
+      }
+
+      const login = await authService.customerLogin(input.email, input.password);
+      setStoredAuthToken(login.accessToken);
+      set({
+        user: login.user,
+        token: login.accessToken,
+        isAuthenticated: true,
+        loading: false,
+        error: null,
+      });
+      return { success: true, confirmationRequired: false };
+    } catch (err: unknown) {
+      clearStoredAuthToken();
+      set({
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        loading: false,
+        error: getAuthErrorMessage(err, 'Registration failed'),
+      });
+      return { success: false, confirmationRequired: false };
+    }
+  },
 
   logout: async () => {
   set({ loading: true });
@@ -141,7 +216,7 @@ if (token) {
   loading: false,
 });
 
-  } catch (err) {
+  } catch {
 
     set({
       user: null,
@@ -159,8 +234,8 @@ if (token) {
       const updatedUser = await authService.updateProfile(profileData);
       set({ user: updatedUser, loading: false });
       return true;
-    } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Update failed', loading: false });
+    } catch (err: unknown) {
+      set({ error: getAuthErrorMessage(err, 'Update failed'), loading: false });
       return false;
     }
   },
@@ -172,8 +247,8 @@ if (token) {
       clearStoredAuthToken();
       set({ user: null, token: null, isAuthenticated: false, loading: false });
       return true;
-    } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Password update failed', loading: false });
+    } catch (err: unknown) {
+      set({ error: getAuthErrorMessage(err, 'Password update failed'), loading: false });
       return false;
     }
   },

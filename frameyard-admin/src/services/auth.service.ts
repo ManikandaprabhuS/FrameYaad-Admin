@@ -15,6 +15,19 @@ type AuthData = {
   expiresInSeconds: number;
 };
 
+export type CustomerRegistrationInput = {
+  name: string;
+  email: string;
+  password: string;
+  phoneNumber?: string;
+};
+
+export type CustomerRegistrationData = {
+  user: BackendUser;
+  emailConfirmationRequired: boolean;
+  authentication: 'httpOnlyCookie' | 'emailConfirmationRequired';
+};
+
 const normalizeUser = (user: BackendUser): User => ({
   ...user,
   cityName: user.city ?? user.cityName ?? null,
@@ -31,6 +44,22 @@ export const authService = {
 
 return { ...response.data.data, user: normalizeUser(response.data.data.user) };
 },
+
+  customerLogin: async (email: string, password: string) => {
+    const response = await api.post<ApiEnvelope<AuthData>>('/auth/customer/login', {
+      email,
+      password,
+    });
+    return { ...response.data.data, user: normalizeUser(response.data.data.user) };
+  },
+
+  registerCustomer: async (input: CustomerRegistrationInput) => {
+    const response = await api.post<ApiEnvelope<CustomerRegistrationData>>('/auth/customer/register', input);
+    return {
+      ...response.data.data,
+      user: normalizeUser(response.data.data.user),
+    };
+  },
 
  me: async (): Promise<User> => {
   const response = await api.get<ApiEnvelope<{ user: BackendUser }>>("/auth/me");
