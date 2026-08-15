@@ -164,8 +164,8 @@ const CustomerProductDetailsPage: React.FC = () => {
         </div>
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)]">
-          <div className="min-w-0">
-            <div className="grid gap-3 sm:grid-cols-[72px_minmax(0,1fr)]">
+          <div className="contents xl:block xl:min-w-0">
+            <div className="order-1 grid gap-3 sm:grid-cols-[72px_minmax(0,1fr)]">
               <div className="order-2 flex gap-2 overflow-x-auto pb-1 sm:order-1 sm:flex-col sm:overflow-visible sm:pb-0">
                 {galleryImages.map((image) => (
                   <button key={image.id} type="button" onClick={() => setSelectedGalleryImage(image.imageUrl)} className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-white ${mainImage === image.imageUrl ? 'border-black' : 'border-transparent hover:border-black/25'}`}>
@@ -194,7 +194,7 @@ const CustomerProductDetailsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="order-3 grid gap-4 md:grid-cols-2 xl:mt-4">
               <div className="rounded-xl border border-black/10 bg-white p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <div><h2 className="text-sm font-black">Upload Your Photo</h2><p className="mt-0.5 text-[10px] text-black/45">JPG, PNG or WEBP · maximum 12 MB</p></div>
@@ -218,7 +218,7 @@ const CustomerProductDetailsPage: React.FC = () => {
             </div>
           </div>
 
-          <aside className="self-start rounded-xl border border-black/10 bg-white p-4 shadow-[0_8px_30px_rgba(0,0,0,0.05)] sm:p-5 xl:sticky xl:top-20">
+          <aside className="order-2 self-start rounded-xl border border-black/10 bg-white p-4 shadow-[0_8px_30px_rgba(0,0,0,0.05)] sm:p-5 xl:sticky xl:top-20">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-black/45">{currentProduct.brandName || 'FrameYaad'}</p>
