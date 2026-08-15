@@ -29,6 +29,9 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
   const [dimensions, setDimensions] = useState<ImageDimensions>({ width: 0, height: 0 });
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
+  const cropAspectRatio = aspectWidth / aspectHeight;
+  const imageAspectRatio = dimensions.height > 0 ? dimensions.width / dimensions.height : 1;
+  const imageFillsWidth = imageAspectRatio <= cropAspectRatio;
 
   const getMetrics = (nextZoom = zoom) => {
     const area = cropAreaRef.current;
@@ -105,15 +108,14 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
       0,
       dimensions.height - sourceHeight,
     );
-    const aspectRatio = aspectWidth / aspectHeight;
     const canvas = document.createElement('canvas');
 
-    if (aspectRatio >= 1) {
+    if (cropAspectRatio >= 1) {
       canvas.width = 1400;
-      canvas.height = Math.round(1400 / aspectRatio);
+      canvas.height = Math.round(1400 / cropAspectRatio);
     } else {
       canvas.height = 1400;
-      canvas.width = Math.round(1400 * aspectRatio);
+      canvas.width = Math.round(1400 * cropAspectRatio);
     }
 
     const context = canvas.getContext('2d');
@@ -152,8 +154,11 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
         <div className="min-h-0 flex-1 overflow-y-auto bg-[#f3f1ed] p-4 sm:p-7">
           <div
             ref={cropAreaRef}
-            className="relative mx-auto max-h-[58vh] w-full max-w-[540px] touch-none cursor-grab overflow-hidden bg-black shadow-[0_20px_70px_rgba(0,0,0,0.25)] active:cursor-grabbing"
-            style={{ aspectRatio: `${aspectWidth} / ${aspectHeight}` }}
+            className="relative mx-auto max-w-[540px] touch-none cursor-grab overflow-hidden bg-black shadow-[0_20px_70px_rgba(0,0,0,0.25)] active:cursor-grabbing"
+            style={{
+              aspectRatio: `${aspectWidth} / ${aspectHeight}`,
+              width: `min(100%, calc(58dvh * ${cropAspectRatio}))`,
+            }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={stopDragging}
@@ -163,9 +168,18 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
               src={imageSource}
               alt="Photo being cropped"
               draggable={false}
-              onLoad={(event) => setDimensions({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
-              className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover will-change-transform"
-              style={{ transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${zoom})` }}
+              onLoad={(event) => {
+                setDimensions({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight });
+                setZoom(1);
+                setOffset({ x: 0, y: 0 });
+              }}
+              className="pointer-events-none absolute left-1/2 top-1/2 max-h-none max-w-none select-none will-change-transform"
+              style={{
+                width: imageFillsWidth ? '100%' : 'auto',
+                height: imageFillsWidth ? 'auto' : '100%',
+                transform: `translate(-50%, -50%) translate3d(${offset.x}px, ${offset.y}px, 0) scale(${zoom})`,
+                transformOrigin: 'center',
+              }}
             />
             <div className="pointer-events-none absolute inset-0 border-[3px] border-white shadow-[inset_0_0_0_999px_rgba(0,0,0,0.06)]" />
             <div className="pointer-events-none absolute inset-0 grid grid-cols-3 grid-rows-3 opacity-45 [&>*]:border-white/70">
@@ -179,6 +193,9 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
             <button type="button" aria-label="Zoom in" onClick={() => updateZoom(zoom + 0.1)} className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-black/10"><Plus className="h-4 w-4" /></button>
             <button type="button" aria-label="Reset crop" onClick={() => { setZoom(1); setOffset({ x: 0, y: 0 }); }} className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-black/10"><RotateCcw className="h-4 w-4" /></button>
           </div>
+          <p className="mx-auto mt-2 max-w-[540px] text-center text-[10px] font-semibold text-black/50">
+            Crop locked to {frameLabel} ({aspectWidth}:{aspectHeight})
+          </p>
         </div>
 
         <div className="flex flex-col-reverse gap-2 border-t border-black/10 p-4 sm:flex-row sm:justify-end">
