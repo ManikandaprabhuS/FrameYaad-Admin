@@ -20,6 +20,7 @@ export type CustomerRegistrationInput = {
   email: string;
   password: string;
   phoneNumber?: string;
+  gender: 'MALE' | 'FEMALE';
 };
 
 export type CustomerRegistrationData = {

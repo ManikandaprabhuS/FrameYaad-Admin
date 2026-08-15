@@ -16,6 +16,8 @@ import {
 import { useAuthStore } from '../../../store/authStore';
 import type { User } from '../../../types';
 import { showError, showSuccess } from '../../../utils/toast';
+import femaleCustomerAvatar from '../../../assets/customer-avatar-female.svg';
+import maleCustomerAvatar from '../../../assets/customer-avatar-male.svg';
 
 type AuthMode = 'login' | 'register';
 
@@ -28,6 +30,7 @@ type RegistrationValues = LoginValues & {
   name: string;
   phoneNumber: string;
   confirmPassword: string;
+  gender: 'MALE' | 'FEMALE';
 };
 
 type ProfileValues = {
@@ -92,6 +95,7 @@ const CustomerProfilePage: React.FC = () => {
             name: values.name.trim(),
             email: values.email.trim().toLowerCase(),
             password: values.password,
+            gender: values.gender,
             ...(values.phoneNumber.trim() ? { phoneNumber: values.phoneNumber.trim() } : {}),
           });
           if (!result.success) return;
@@ -223,6 +227,18 @@ const RegistrationForm: React.FC<{
       <div className="mt-7 grid gap-4 sm:grid-cols-2">
         <AuthInput label="Full name" autoComplete="name" icon={<UserRound />} error={errors.name?.message} registration={register('name', { required: 'Full name is required', minLength: { value: 2, message: 'Name must contain at least 2 characters' }, maxLength: { value: 120, message: 'Name is too long' } })} />
         <AuthInput label="Phone number (optional)" type="tel" autoComplete="tel" icon={<Phone />} error={errors.phoneNumber?.message} registration={register('phoneNumber', { validate: (value) => !value || (value.trim().length >= 7 && value.trim().length <= 20) || 'Phone number must contain 7–20 characters' })} />
+        <fieldset className="sm:col-span-2">
+          <legend className="text-xs font-bold text-black/75">Gender</legend>
+          <div className="mt-2 grid grid-cols-2 gap-3">
+            {(['MALE', 'FEMALE'] as const).map((gender) => (
+              <label key={gender} className="flex h-12 cursor-pointer items-center gap-3 rounded-lg border border-black/15 px-4 text-sm font-semibold transition has-[:checked]:border-black has-[:checked]:bg-black has-[:checked]:text-white">
+                <input type="radio" value={gender} className="h-4 w-4 accent-black" {...register('gender', { required: 'Select your gender' })} />
+                {gender === 'MALE' ? 'Male' : 'Female'}
+              </label>
+            ))}
+          </div>
+          {errors.gender && <span className="mt-1.5 block text-[11px] font-semibold text-red-600">{errors.gender.message}</span>}
+        </fieldset>
         <div className="sm:col-span-2"><AuthInput label="Email address" type="email" autoComplete="email" icon={<Mail />} error={errors.email?.message} registration={register('email', { required: 'Email address is required', pattern: { value: emailPattern, message: 'Enter a valid email address' } })} /></div>
         <AuthInput label="Password" type="password" autoComplete="new-password" icon={<LockKeyhole />} error={errors.password?.message} registration={register('password', { required: 'Password is required', minLength: { value: 8, message: 'Password must contain at least 8 characters' }, maxLength: { value: 72, message: 'Password cannot exceed 72 characters' } })} />
         <AuthInput label="Confirm password" type="password" autoComplete="new-password" icon={<LockKeyhole />} error={errors.confirmPassword?.message} registration={register('confirmPassword', { required: 'Confirm your password', validate: (value) => value === getValues('password') || 'Passwords do not match' })} />
@@ -242,6 +258,11 @@ const CustomerAccount: React.FC<{
   onLogout: () => Promise<void>;
 }> = ({ user, loading, error, onUpdate, onLogout }) => {
   const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm<ProfileValues>();
+  const genderAvatar = user.gender === 'FEMALE'
+    ? femaleCustomerAvatar
+    : user.gender === 'MALE'
+      ? maleCustomerAvatar
+      : null;
 
   useEffect(() => {
     reset({
@@ -266,7 +287,15 @@ const CustomerAccount: React.FC<{
 
         <div className="mt-7 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[0_15px_50px_rgba(0,0,0,0.05)]">
           <div className="flex flex-col gap-5 border-b border-black/10 bg-black px-5 py-7 text-white sm:flex-row sm:items-center sm:px-8">
-            <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-white text-3xl font-black text-black">{user.name?.charAt(0).toUpperCase() || 'C'}</div>
+            {genderAvatar ? (
+              <img
+                src={genderAvatar}
+                alt={`${user.gender === 'FEMALE' ? 'Female' : 'Male'} profile avatar`}
+                className="h-20 w-20 shrink-0 rounded-full border-2 border-white/25 bg-white object-cover"
+              />
+            ) : (
+              <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-white text-3xl font-black text-black">{user.name?.charAt(0).toUpperCase() || 'C'}</div>
+            )}
             <div><h2 className="text-2xl font-black">{user.name}</h2><p className="mt-1 text-sm text-white/65">{user.email}</p><span className="mt-3 inline-flex rounded-full border border-white/20 px-3 py-1 text-[10px] font-black uppercase tracking-wider">Customer</span></div>
           </div>
 

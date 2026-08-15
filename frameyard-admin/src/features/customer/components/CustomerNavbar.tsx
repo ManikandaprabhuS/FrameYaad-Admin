@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Menu, ShoppingCart, User, X } from 'lucide-react';
+import { Heart, Menu, ShoppingCart, User, X } from 'lucide-react';
 import fyLogoIcon from '../../../assets/fy-logo-icon.jpeg';
 import { useAuthStore } from '../../../store/authStore';
 
@@ -46,6 +46,15 @@ const CustomerNavbar: React.FC = () => {
         </nav>
 
         <div className="hidden items-center gap-4 md:flex">
+          {customerLoggedIn && (
+            <span
+              className="inline-flex rounded-full p-2 text-black"
+              title="Wishlist"
+              aria-label="Wishlist"
+            >
+              <Heart className="h-5 w-5" />
+            </span>
+          )}
           <Link to="/cart" className="relative rounded-full p-2 text-black transition hover:bg-black/5" title="Cart">
             <ShoppingCart className="h-5 w-5" />
             <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-black px-1 text-[10px] font-bold text-white">
@@ -58,14 +67,25 @@ const CustomerNavbar: React.FC = () => {
           </Link>
         </div>
 
-        <button
-          className="rounded-lg border border-outline-variant p-2 md:hidden"
-          onClick={() => setMenuOpen((open) => !open)}
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={menuOpen}
-        >
-          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          {customerLoggedIn && (
+            <span
+              className="inline-flex rounded-full p-2 text-black"
+              title="Wishlist"
+              aria-label="Wishlist"
+            >
+              <Heart className="h-5 w-5" />
+            </span>
+          )}
+          <button
+            className="rounded-lg border border-outline-variant p-2"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
 
       {menuOpen && (
