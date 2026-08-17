@@ -19,6 +19,7 @@ import { showError, showSuccess } from '../../../utils/toast';
 import femaleCustomerAvatar from '../../../assets/customer-avatar-female.svg';
 import maleCustomerAvatar from '../../../assets/customer-avatar-male.svg';
 import CustomerAccountDashboard from '../components/CustomerAccountDashboard';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 type AuthMode = 'login' | 'register';
 
@@ -48,6 +49,8 @@ type ProfileValues = {
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const CustomerProfilePage: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const loading = useAuthStore((state) => state.loading);
@@ -63,6 +66,7 @@ const CustomerProfilePage: React.FC = () => {
   const [checkingSession, setCheckingSession] = useState(true);
   const [confirmationEmail, setConfirmationEmail] = useState('');
   const customerAuthenticated = isAuthenticated && user?.role === 'CUSTOMER';
+  const returnTo = (location.state as { returnTo?: string } | null)?.returnTo;
 
   useEffect(() => {
     let active = true;
@@ -90,7 +94,10 @@ const CustomerProfilePage: React.FC = () => {
         }}
         onLogin={async (values) => {
           const success = await loginCustomer(values.email.trim().toLowerCase(), values.password);
-          if (success) showSuccess('Welcome back to FrameYaad');
+          if (success) {
+            showSuccess('Welcome back to FrameYaad');
+            if (returnTo) navigate(returnTo, { replace: true });
+          }
         }}
         onRegister={async (values) => {
           const result = await registerCustomer({
@@ -106,6 +113,7 @@ const CustomerProfilePage: React.FC = () => {
             return;
           }
           showSuccess('Your FrameYaad account is ready');
+          if (returnTo) navigate(returnTo, { replace: true });
         }}
       />
     );

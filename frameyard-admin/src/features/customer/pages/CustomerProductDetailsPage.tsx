@@ -18,6 +18,7 @@ import ImageCropModal from '../components/ImageCropModal';
 import { useProductStore } from '../../../store/productStore';
 import type { ProductVariant } from '../../../types';
 import { showError, showSuccess } from '../../../utils/toast';
+import { useCustomerCommerce } from '../hooks/useCustomerCommerce';
 
 type FrameRatio = { width: number; height: number; label: string };
 
@@ -48,6 +49,7 @@ const CustomerProductDetailsPage: React.FC = () => {
   const [cropSource, setCropSource] = useState('');
   const [croppedImages, setCroppedImages] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { customerLoggedIn, wishlist, toggleWishlist, addToCart } = useCustomerCommerce();
 
   useEffect(() => {
     if (slug) fetchProductById(slug, true);
@@ -95,6 +97,7 @@ const CustomerProductDetailsPage: React.FC = () => {
   const discount = originalPrice > currentPrice && originalPrice > 0
     ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
     : 0;
+  const wished = customerLoggedIn && Boolean(currentProduct?.productIdentifier && wishlist[currentProduct.productIdentifier]);
 
   const chooseVariantValue = (field: keyof Pick<ProductVariant, 'frameSize' | 'mountType' | 'glassType'>, value: string) => {
     const candidates = activeVariants.filter((variant) => variant[field] === value);
@@ -182,7 +185,7 @@ const CustomerProductDetailsPage: React.FC = () => {
 
               <div className="order-1 relative aspect-[4/5] min-h-0 overflow-hidden rounded-xl border border-black/10 bg-[#eeeae4] sm:order-2 sm:aspect-auto sm:min-h-[460px] lg:min-h-[560px]">
                 {discount > 0 && <span className="absolute left-3 top-3 z-10 rounded bg-black px-2.5 py-1.5 text-[10px] font-black uppercase text-white">{discount}% off</span>}
-                <button type="button" aria-label="Add product to wishlist" className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full border border-black/10 bg-white shadow"><Heart className="h-4 w-4" /></button>
+                <button type="button" onClick={() => void toggleWishlist(currentProduct)} aria-label={`${wished ? 'Remove' : 'Add'} product ${wished ? 'from' : 'to'} wishlist`} aria-pressed={wished} className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full border border-black/10 bg-white shadow"><Heart className={`h-4 w-4 ${wished ? 'fill-black' : ''}`} /></button>
                 {mainImage ? <img src={mainImage} alt={currentProduct.name} fetchPriority="high" decoding="async" className="h-full w-full object-cover object-center" /> : <div className="grid h-full min-h-[360px] place-items-center text-sm text-black/40">No product image</div>}
                 {croppedImage && mainImage === croppedImage && (
                   <div className="pointer-events-none absolute inset-0 grid place-items-center">
@@ -275,7 +278,7 @@ const CustomerProductDetailsPage: React.FC = () => {
                 <span className="w-8 text-center text-xs font-black">{quantity}</span>
                 <button type="button" aria-label="Increase quantity" onClick={() => setQuantity((current) => Math.min(Number(selectedVariant?.stockQuantity ?? 1), current + 1))} className="grid h-full w-10 place-items-center"><Plus className="h-3.5 w-3.5" /></button>
               </div>
-              <button type="button" onClick={() => showSuccess('Your configured frame is ready. Cart checkout will use this selection when connected.')} disabled={!selectedVariant || Number(selectedVariant.stockQuantity) <= 0} className="inline-flex h-11 w-full flex-1 items-center justify-center gap-2 rounded-lg bg-black text-xs font-black text-white disabled:bg-black/30"><ShoppingBag className="h-4 w-4" /> Add to Bag</button>
+              <button type="button" onClick={() => { if (selectedVariant) addToCart(currentProduct, selectedVariant, quantity); }} disabled={!selectedVariant || Number(selectedVariant.stockQuantity) <= 0} className="inline-flex h-11 w-full flex-1 items-center justify-center gap-2 rounded-lg bg-black text-xs font-black text-white disabled:bg-black/30"><ShoppingBag className="h-4 w-4" /> Add to Bag</button>
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-2 border-t border-black/10 pt-4 sm:grid-cols-4">

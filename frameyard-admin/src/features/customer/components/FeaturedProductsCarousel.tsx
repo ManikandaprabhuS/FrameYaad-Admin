@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Product } from '../../../types';
 import FeaturedProductCard, { FeaturedProductPricing } from './FeaturedProductCard';
+import { useCustomerCommerce } from '../hooks/useCustomerCommerce';
 
 interface FeaturedProductsCarouselProps {
   products: Product[];
@@ -40,6 +41,7 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
   const [mobileActiveIndex, setMobileActiveIndex] = useState(1);
   const [desktopIndex, setDesktopIndex] = useState(1);
   const [desktopTransition, setDesktopTransition] = useState(true);
+  const { customerLoggedIn, wishlist, toggleWishlist, addToCart } = useCustomerCommerce();
 
   const sourceProducts = products.length > 0 ? products : cachedProducts;
   const featuredProducts = useMemo(() => {
@@ -217,6 +219,12 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
                   pricing={getProductPricing(product)}
                   isActive={isActive}
                   onSelect={() => selectDesktopCard(index)}
+                  wished={customerLoggedIn && Boolean(product.productIdentifier && wishlist[product.productIdentifier])}
+                  onToggleWishlist={() => void toggleWishlist(product)}
+                  onAddToCart={() => {
+                    const variant = product.variants?.find((item) => item.isActive !== false && Number(item.stockQuantity) > 0);
+                    if (variant) addToCart(product, variant);
+                  }}
                   className="h-[300px] w-[216px]"
                   style={{
                     transform: `translate3d(0, ${isActive ? 8 : 24}px, 0) scale(${isActive ? 1.04 : 0.96})`,
@@ -264,6 +272,12 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
                     pricing={getProductPricing(product)}
                     isActive={isActive}
                     onSelect={() => selectMobileCard(originalIndex)}
+                    wished={customerLoggedIn && Boolean(product.productIdentifier && wishlist[product.productIdentifier])}
+                    onToggleWishlist={() => void toggleWishlist(product)}
+                    onAddToCart={() => {
+                      const variant = product.variants?.find((item) => item.isActive !== false && Number(item.stockQuantity) > 0);
+                      if (variant) addToCart(product, variant);
+                    }}
                     className="h-full w-full"
                     style={{ transform: `translate3d(0, ${isActive ? 0 : 14}px, 0) scale(${isActive ? 1 : 0.93})` }}
                   />

@@ -181,6 +181,8 @@ if (token) {
   try {
     await authService.logout();
 
+    clearStoredAuthToken();
+
     set({
       user: null,
       token: null,

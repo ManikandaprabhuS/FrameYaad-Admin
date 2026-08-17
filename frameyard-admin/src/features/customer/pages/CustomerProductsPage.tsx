@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ChevronDown,
   ChevronLeft,
@@ -13,6 +13,7 @@ import ProductCatalogCard from '../components/ProductCatalogCard';
 import { getCatalogPricing, type CatalogPricing } from '../utils/catalog-product';
 import { useProductStore } from '../../../store/productStore';
 import type { Product } from '../../../types';
+import { useCustomerCommerce } from '../hooks/useCustomerCommerce';
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -39,7 +40,7 @@ const CustomerProductsPage: React.FC = () => {
   const [sort, setSort] = useState<SortOption>('featured');
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [wishedProducts, setWishedProducts] = useState<Set<string>>(() => new Set());
+  const { customerLoggedIn, wishlist, toggleWishlist, addToCart } = useCustomerCommerce();
 
   useEffect(() => {
     if (products.length === 0) {
@@ -121,15 +122,6 @@ const CustomerProductsPage: React.FC = () => {
   const startItem = filteredProducts.length === 0 ? 0 : (currentPage - 1) * PRODUCTS_PER_PAGE + 1;
   const endItem = Math.min(currentPage * PRODUCTS_PER_PAGE, filteredProducts.length);
   const activeFilterCount = materials.length + sizes.length + availability.length + Number(saleOnly) + Number(maximumPrice !== null);
-
-  const toggleWishlist = useCallback((productId: string) => {
-    setWishedProducts((current) => {
-      const next = new Set(current);
-      if (next.has(productId)) next.delete(productId);
-      else next.add(productId);
-      return next;
-    });
-  }, []);
 
   const updateFilter = (callback: () => void) => {
     callback();
@@ -324,9 +316,10 @@ const CustomerProductsPage: React.FC = () => {
                   product={product}
                   pricing={pricing}
                   totalStock={totalStock}
-                  wished={wishedProducts.has(product.id)}
+                  wished={customerLoggedIn && Boolean(product.productIdentifier && wishlist[product.productIdentifier])}
                   priority={currentPage === 1 && index < 4}
                   onToggleWishlist={toggleWishlist}
+                  onAddToCart={addToCart}
                 />
               ))}
             </div>

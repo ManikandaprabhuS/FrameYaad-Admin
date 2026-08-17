@@ -12,7 +12,8 @@ type ProductCatalogCardProps = {
   totalStock: number;
   wished: boolean;
   priority?: boolean;
-  onToggleWishlist: (productId: string) => void;
+  onToggleWishlist: (product: Product) => void;
+  onAddToCart: (product: Product, variant: NonNullable<CatalogPricing['variant']>) => void;
 };
 
 const ProductCatalogCard: React.FC<ProductCatalogCardProps> = ({
@@ -22,6 +23,7 @@ const ProductCatalogCard: React.FC<ProductCatalogCardProps> = ({
   wished,
   priority = false,
   onToggleWishlist,
+  onAddToCart,
 }) => {
   const navigate = useNavigate();
   const image = product.images?.find((item) => item.isPrimary)?.imageUrl
@@ -59,7 +61,7 @@ const ProductCatalogCard: React.FC<ProductCatalogCardProps> = ({
             aria-pressed={wished}
             onClick={(event) => {
               event.stopPropagation();
-              onToggleWishlist(product.id);
+              onToggleWishlist(product);
             }}
             className="grid h-8 w-8 place-items-center rounded-full border border-black/10 bg-white/95 text-black shadow-sm transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-black"
           >
@@ -99,7 +101,7 @@ const ProductCatalogCard: React.FC<ProductCatalogCardProps> = ({
             disabled={!inStock}
             onClick={(event) => {
               event.stopPropagation();
-              openProduct();
+              if (pricing.variant) onAddToCart(product, pricing.variant);
             }}
             className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md bg-black px-2 text-[10px] font-bold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-black/25 min-[420px]:h-8 min-[420px]:w-auto min-[420px]:px-3"
           >

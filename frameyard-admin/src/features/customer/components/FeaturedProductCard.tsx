@@ -16,6 +16,9 @@ interface FeaturedProductCardProps {
   className?: string;
   style?: React.CSSProperties;
   onSelect?: () => void;
+  wished?: boolean;
+  onToggleWishlist?: () => void;
+  onAddToCart?: () => void;
 }
 
 const FeaturedProductCard: React.FC<FeaturedProductCardProps> = ({
@@ -25,6 +28,9 @@ const FeaturedProductCard: React.FC<FeaturedProductCardProps> = ({
   className = '',
   style,
   onSelect,
+  wished = false,
+  onToggleWishlist,
+  onAddToCart,
 }) => {
   const imageUrl = product.images?.[0]?.imageUrl || heroFallback;
 
@@ -51,10 +57,11 @@ const FeaturedProductCard: React.FC<FeaturedProductCardProps> = ({
       <button
         type="button"
         className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white text-black shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition hover:scale-105 focus:outline-none focus:ring-4 focus:ring-black/15"
-        aria-label={`Add ${product.name} to wishlist`}
-        onClick={(event) => event.stopPropagation()}
+        aria-label={`${wished ? 'Remove' : 'Add'} ${product.name} ${wished ? 'from' : 'to'} wishlist`}
+        aria-pressed={wished}
+        onClick={(event) => { event.stopPropagation(); onToggleWishlist?.(); }}
       >
-        <Heart className="h-5 w-5" aria-hidden="true" />
+        <Heart className={`h-5 w-5 ${wished ? 'fill-black' : ''}`} aria-hidden="true" />
       </button>
 
       <div className="h-[58%] shrink-0 bg-[#f4f0ea]">
@@ -90,7 +97,7 @@ const FeaturedProductCard: React.FC<FeaturedProductCardProps> = ({
               isActive ? 'bg-black text-white' : 'bg-white text-black'
             }`}
             aria-label={`Add ${product.name} to cart`}
-            onClick={(event) => event.stopPropagation()}
+            onClick={(event) => { event.stopPropagation(); onAddToCart?.(); }}
           >
             <ShoppingCart className="h-4 w-4" aria-hidden="true" />
           </button>
