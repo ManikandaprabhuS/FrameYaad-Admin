@@ -432,11 +432,6 @@ const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loa
                       Image unavailable
                     </span>
                   )}
-                  {isCentered && !isMobile && (
-                    <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent px-3 pb-3 pt-10 text-left text-sm font-semibold text-white">
-                      {product.name}
-                    </span>
-                  )}
                 </button>
               );
             })}
