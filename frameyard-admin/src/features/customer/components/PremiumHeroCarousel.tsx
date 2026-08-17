@@ -341,6 +341,7 @@ const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loa
           </h3>
           <button
             type="button"
+            onPointerDown={(event) => event.stopPropagation()}
             onClick={() => navigate('/products')}
             className="mt-5 inline-flex items-center gap-4 rounded-lg bg-black px-8 py-4 text-sm font-bold text-white shadow-[0_14px_30px_rgba(0,0,0,0.14)] transition hover:-translate-y-0.5 hover:bg-black/90 focus:outline-none focus:ring-4 focus:ring-black/20 sm:mt-6 sm:px-10 sm:py-4 sm:text-base"
           >
