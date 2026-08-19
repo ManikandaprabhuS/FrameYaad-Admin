@@ -5,6 +5,7 @@ import fyLogoIcon from '../../../assets/fy-logo-icon.jpeg';
 import { useAuthStore } from '../../../store/authStore';
 import { useCustomerCommerceStore } from '../../../store/customerCommerceStore';
 import { showError } from '../../../utils/toast';
+import CustomerWishlistDrawer from './CustomerWishlistDrawer';
 
 const customerNavLinks = [
   { name: 'Home', path: '/' },
@@ -15,6 +16,7 @@ const customerNavLinks = [
 
 const CustomerNavbar: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [wishlistOpen, setWishlistOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
@@ -27,7 +29,7 @@ const CustomerNavbar: React.FC = () => {
       navigate('/profile', { state: { returnTo: location.pathname } });
       return;
     }
-    navigate('/profile#wishlist');
+    setWishlistOpen(true);
   };
 
   const navClassName = ({ isActive }: { isActive: boolean }) =>
@@ -102,6 +104,7 @@ const CustomerNavbar: React.FC = () => {
           </aside>
         </div>
       )}
+      <CustomerWishlistDrawer open={wishlistOpen} onClose={() => setWishlistOpen(false)} />
     </header>
   );
 };
