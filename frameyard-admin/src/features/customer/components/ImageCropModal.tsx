@@ -67,6 +67,7 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
 }) => {
   const stageRef = useRef<HTMLDivElement | null>(null);
   const interactionRef = useRef<Interaction | null>(null);
+  const maximumCropWidthRef = useRef(1);
   const [dimensions, setDimensions] = useState<ImageDimensions>({ width: 0, height: 0 });
   const [crop, setCrop] = useState<CropRect | null>(null);
   const cropAspectRatio = aspectWidth / aspectHeight;
@@ -128,7 +129,7 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
     const width = clamp(
       requestedWidth,
       minimumWidth,
-      Math.min(maximumWidthByX, maximumHeight * normalizedRatio),
+      Math.min(maximumCropWidthRef.current, maximumWidthByX, maximumHeight * normalizedRatio),
     );
     const height = width / normalizedRatio;
 
@@ -233,8 +234,10 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
                   width: event.currentTarget.naturalWidth,
                   height: event.currentTarget.naturalHeight,
                 };
+                const initialCrop = createInitialCrop(nextDimensions, cropAspectRatio);
                 setDimensions(nextDimensions);
-                setCrop(createInitialCrop(nextDimensions, cropAspectRatio));
+                maximumCropWidthRef.current = initialCrop.width;
+                setCrop(initialCrop);
               }}
               className="pointer-events-none absolute inset-0 h-full w-full object-contain"
             />
@@ -279,7 +282,7 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
           <div className="mx-auto mt-4 flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
             <div>
               <p className="text-xs font-bold">Locked frame ratio: {frameLabel}</p>
-              <p className="mt-0.5 text-[10px] text-white/50">{aspectWidth}:{aspectHeight} · drag corners to resize · drag inside to reposition</p>
+              <p className="mt-0.5 text-[10px] text-white/50">{aspectWidth}:{aspectHeight} · drag corners inward to resize · drag inside to reposition</p>
             </div>
             <button type="button" onClick={resetCrop} className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/15 px-3 text-[11px] font-bold hover:bg-white hover:text-black">
               <RotateCcw className="h-3.5 w-3.5" /> Reset crop
