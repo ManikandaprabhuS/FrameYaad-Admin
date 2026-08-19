@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Heart, Menu, ShoppingCart, User, X } from 'lucide-react';
 import fyLogoIcon from '../../../assets/fy-logo-icon.jpeg';
@@ -23,6 +23,15 @@ const CustomerNavbar: React.FC = () => {
   const customerLoggedIn = useAuthStore((state) => state.isAuthenticated) && user?.role === 'CUSTOMER';
   const accountLabel = customerLoggedIn ? user.name.split(' ')[0] || 'Account' : 'Login';
   const cartCount = useCustomerCommerceStore((state) => state.cartItems.reduce((total, item) => total + item.quantity, 0));
+  const wishlistItems = useCustomerCommerceStore((state) => state.wishlistItems);
+  const wishlistLoadedForUserId = useCustomerCommerceStore((state) => state.wishlistLoadedForUserId);
+  const loadWishlist = useCustomerCommerceStore((state) => state.loadWishlist);
+  const wishlistCount = customerLoggedIn && wishlistLoadedForUserId === user.id ? wishlistItems.length : 0;
+
+  useEffect(() => {
+    if (customerLoggedIn) void loadWishlist(user.id);
+  }, [customerLoggedIn, loadWishlist, user]);
+
   const openWishlist = () => {
     if (!customerLoggedIn) {
       showError('Please login to add product to wishlist');
@@ -61,8 +70,13 @@ const CustomerNavbar: React.FC = () => {
         </nav>
 
         <div className="hidden items-center gap-4 md:flex">
-          <button type="button" onClick={openWishlist} className="inline-flex rounded-full p-2 text-black transition hover:bg-black/5" title="Wishlist" aria-label="Wishlist">
+          <button type="button" onClick={openWishlist} className="relative inline-flex rounded-full p-2 text-black transition hover:bg-black/5" title="Wishlist" aria-label={`Wishlist${wishlistCount ? `, ${wishlistCount} saved ${wishlistCount === 1 ? 'item' : 'items'}` : ''}`}>
               <Heart className="h-5 w-5" />
+              {wishlistCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-black px-1 text-[10px] font-bold text-white">
+                  {wishlistCount > 99 ? '99+' : wishlistCount}
+                </span>
+              )}
           </button>
           <Link to="/cart" className="relative rounded-full p-2 text-black transition hover:bg-black/5" title="Cart">
             <ShoppingCart className="h-5 w-5" />
@@ -77,8 +91,13 @@ const CustomerNavbar: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
-          <button type="button" onClick={openWishlist} className="inline-flex rounded-full p-2 text-black" title="Wishlist" aria-label="Wishlist">
+          <button type="button" onClick={openWishlist} className="relative inline-flex rounded-full p-2 text-black" title="Wishlist" aria-label={`Wishlist${wishlistCount ? `, ${wishlistCount} saved ${wishlistCount === 1 ? 'item' : 'items'}` : ''}`}>
               <Heart className="h-5 w-5" />
+              {wishlistCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-black px-1 text-[10px] font-bold text-white">
+                  {wishlistCount > 99 ? '99+' : wishlistCount}
+                </span>
+              )}
           </button>
           <button
             className="rounded-lg border border-outline-variant p-2"
