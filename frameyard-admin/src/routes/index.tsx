@@ -16,6 +16,7 @@ const ProfilePage = lazy(() => import('../pages/profile/ProfilePage'));
 const SettingsPage = lazy(() => import('../pages/settings/SettingsPage'));
 const EmployeesPage = lazy(() => import('../pages/employees/EmployeesPage'));
 const WishlistAnalyticsPage = lazy(() => import('../pages/wishlist/WishlistAnalyticsPage'));
+const NewsletterSubscribersPage = lazy(() => import('../pages/newsletter/NewsletterSubscribersPage'));
 const CouponsPage = lazy(() => import('../pages/marketing/coupon/CouponReferencePages').then(module => ({ default: module.CouponReferenceList })));
 const CouponDetails = lazy(() => import('../pages/marketing/coupon/CouponReferencePages').then(module => ({ default: module.CouponReferenceDetails })));
 const CouponDynamicWizard = lazy(() => import('../pages/marketing/coupon/CouponDynamicWizard').then(module => ({ default: module.CouponDynamicWizard })));
@@ -87,6 +88,10 @@ export const router = createBrowserRouter([
           {
             path: 'notifications',
             element: <NotificationsPage />,
+          },
+          {
+            path: 'newsletter',
+            element: <NewsletterSubscribersPage />,
           },
           {
             path: 'customers',

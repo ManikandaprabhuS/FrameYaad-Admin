@@ -161,3 +161,26 @@ npm run build
 - Product add/edit supports multiple variants and image persistence through the existing APIs.
 - Removed duplicate fetches and unnecessary render delays from product, order, notification, and employee pages.
 - Shared toasts now use green success styling/check icons and red error styling/icons.
+
+## Newsletter Module
+
+### Customer Website
+
+- The existing footer newsletter form now calls `POST /api/v1/newsletter/subscribe` through the shared API client.
+- Includes required/format validation, whitespace trimming, lowercase normalization, duplicate-click prevention, and a `Subscribing...` loading state.
+- Displays distinct messages for a new subscription, a reactivated subscription, an already-subscribed email, and a safe generic network/server failure.
+- The form remains horizontal on wider screens and stacks cleanly on mobile.
+
+### Admin and Employee Dashboard
+
+- Added `Newsletter` to the staff sidebar and `/admin/newsletter` to the protected lazy-loaded routes.
+- The responsive page includes API-driven Total, Active, and Unsubscribed summary cards; a 350 ms debounced email search; server-side status filtering; skeleton, empty, error, and retry states; and 20-row server pagination.
+- `Export CSV` calls the protected backend export endpoint, downloads `frameyaad-newsletter-subscribers.csv`, and uses the shared success/error toast system.
+- Desktop uses the existing black-and-white table treatment; mobile uses subscriber cards.
+
+### Frontend Files
+
+- `src/services/newsletter.service.ts` — typed subscribe, unsubscribe, list, and CSV export integration.
+- `src/pages/newsletter/NewsletterSubscribersPage.tsx` — subscriber management screen.
+- `src/features/customer/components/Footer.tsx` — public subscription UI and validation states.
+- `src/layouts/AdminLayout.tsx` and `src/routes/index.tsx` — staff navigation and protected route registration.

@@ -1,7 +1,8 @@
 import React, { FormEvent, useState } from 'react';
+import axios from 'axios';
 import { BriefcaseBusiness, Camera, LucideIcon, Mail, MapPin, Phone, Send, Share2 } from 'lucide-react';
-import { showError, showSuccess } from '../../../utils/toast';
 import footerCraftsmanship from '../../../assets/footer-craftsmanship.png';
+import { newsletterService } from '../../../services/newsletter.service';
 
 interface SocialLink {
   name: string;
@@ -57,17 +58,44 @@ const FooterIllustration: React.FC = () => (
 
 const Footer: React.FC = () => {
   const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const handleSubscribe = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubscribe = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      showError('Please enter a valid email address');
+    if (!normalizedEmail) {
+      setMessage({ type: 'error', text: 'Email address is required.' });
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setMessage({ type: 'error', text: 'Please enter a valid email address.' });
       return;
     }
 
-    showSuccess('Thank you for subscribing to FrameYaad');
-    setEmail('');
+    setSubmitting(true);
+    setMessage(null);
+    try {
+      const result = await newsletterService.subscribe(normalizedEmail);
+      setMessage({
+        type: 'success',
+        text: result.resubscribed
+          ? "Welcome back! You're subscribed to our newsletter again."
+          : "You're subscribed to our newsletter!",
+      });
+      setEmail('');
+    } catch (error) {
+      const code = axios.isAxiosError(error) ? error.response?.data?.error?.code : undefined;
+      setMessage({
+        type: code === 'ALREADY_SUBSCRIBED' ? 'success' : 'error',
+        text: code === 'ALREADY_SUBSCRIBED'
+          ? "You're already subscribed to our newsletter."
+          : 'Unable to subscribe right now. Please try again.',
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -88,17 +116,26 @@ const Footer: React.FC = () => {
                   id="footer-newsletter-email"
                   type="email"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(event) => { setEmail(event.target.value); setMessage(null); }}
                   placeholder="Enter your email"
+                  disabled={submitting}
+                  aria-invalid={message?.type === 'error'}
+                  aria-describedby={message ? 'footer-newsletter-message' : undefined}
                   className="min-h-12 w-full rounded-xl border border-white/15 bg-white/8 px-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-[#c07d42] focus:bg-white/12 focus:ring-4 focus:ring-[#c07d42]/15"
                 />
                 <button
                   type="submit"
-                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-[#111827] transition hover:-translate-y-0.5 hover:bg-[#f7f3ef] hover:shadow-[0_18px_40px_rgba(255,255,255,0.12)] xl:w-auto"
+                  disabled={submitting}
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-[#111827] transition hover:-translate-y-0.5 hover:bg-[#f7f3ef] hover:shadow-[0_18px_40px_rgba(255,255,255,0.12)] disabled:cursor-wait disabled:opacity-60 xl:w-auto"
                 >
-                  Subscribe <Send className="h-4 w-4" aria-hidden="true" />
+                  {submitting ? 'Subscribing...' : 'Subscribe'} <Send className="h-4 w-4" aria-hidden="true" />
                 </button>
               </form>
+              {message && (
+                <p id="footer-newsletter-message" role={message.type === 'error' ? 'alert' : 'status'} className={`mt-3 text-sm font-semibold ${message.type === 'error' ? 'text-red-400' : 'text-emerald-400'}`}>
+                  {message.text}
+                </p>
+              )}
             </section>
 
             <section aria-labelledby="follow-heading">
