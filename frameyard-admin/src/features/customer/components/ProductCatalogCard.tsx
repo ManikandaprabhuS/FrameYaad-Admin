@@ -16,6 +16,21 @@ type ProductCatalogCardProps = {
   onAddToCart: (product: Product, variant: NonNullable<CatalogPricing['variant']>) => void;
 };
 
+const COLOR_NAMES: Record<string, string> = {
+  '#0f172a': 'Black',
+  '#fef3c7': 'Natural Oak',
+  '#ffffff': 'White',
+  '#4a3728': 'Dark Walnut',
+  '#94a3b8': 'Silver',
+  '#ca8a04': 'Gold',
+};
+
+const getColorName = (color?: string | null) => {
+  const value = color?.trim();
+  if (!value) return undefined;
+  return COLOR_NAMES[value.toLowerCase()] ?? (value.startsWith('#') ? 'Custom Color' : value);
+};
+
 const ProductCatalogCard: React.FC<ProductCatalogCardProps> = ({
   product,
   pricing,
@@ -79,7 +94,7 @@ const ProductCatalogCard: React.FC<ProductCatalogCardProps> = ({
       <div className="flex flex-1 flex-col p-3 sm:p-3.5">
         <h2 className="line-clamp-2 min-h-10 text-[13px] font-extrabold leading-5 text-black sm:min-h-0 sm:truncate sm:text-sm" title={product.name}>{product.name}</h2>
         <p className="mt-1 truncate text-[11px] font-medium text-black/55">
-          {[pricing.variant?.frameSize, product.material, pricing.variant?.color].filter(Boolean).join(' · ') || 'Frame'}
+          {[pricing.variant?.frameSize, product.material, getColorName(pricing.variant?.color)].filter(Boolean).join(' · ') || 'Frame'}
         </p>
 
         <div className="mt-2 flex min-h-5 items-center gap-2">
