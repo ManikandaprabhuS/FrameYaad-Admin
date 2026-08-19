@@ -287,17 +287,28 @@ const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loa
     window.setTimeout(() => { movedRef.current = false; }, 0);
   };
 
-  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    const horizontalIntent = Math.abs(event.deltaX) > Math.abs(event.deltaY) || event.shiftKey;
-    if (!horizontalIntent) return;
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport || baseLength === 0) return;
 
-    event.preventDefault();
-    const now = event.timeStamp;
-    if (now - lastWheelMoveRef.current < SNAP_DURATION_MS) return;
-    lastWheelMoveRef.current = now;
-    pauseAfterInteraction();
-    moveBy((event.deltaX || event.deltaY) > 0 ? 1 : -1);
-  };
+    const handleWheel = (event: WheelEvent) => {
+      const horizontalIntent = Math.abs(event.deltaX) > Math.abs(event.deltaY) || event.shiftKey;
+      if (!horizontalIntent) return;
+
+      event.preventDefault();
+      const now = event.timeStamp;
+      if (now - lastWheelMoveRef.current < SNAP_DURATION_MS) return;
+      lastWheelMoveRef.current = now;
+
+      setInteractionPaused(true);
+      if (resumeTimerRef.current !== null) window.clearTimeout(resumeTimerRef.current);
+      resumeTimerRef.current = window.setTimeout(() => setInteractionPaused(false), AUTOPLAY_RESUME_DELAY_MS);
+      snapTo(position + ((event.deltaX || event.deltaY) > 0 ? 1 : -1));
+    };
+
+    viewport.addEventListener('wheel', handleWheel, { passive: false });
+    return () => viewport.removeEventListener('wheel', handleWheel);
+  }, [baseLength, position, snapTo]);
 
   const handleCardClick = (index: number, product: Product) => {
     if (movedRef.current) return;
@@ -325,7 +336,6 @@ const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loa
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
-        onWheel={handleWheel}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         role="region"
@@ -398,7 +408,7 @@ const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loa
                     marginRight: isCompactViewport ? 0 : cardStep - cardWidth,
                     display: isCompactViewport && !isWithinVisibleRange ? 'none' : undefined,
                     clipPath: `url(#${clipId})`,
-                    transform: `translate3d(${translateX}px, ${translateY - (hoveredCardIndex === index ? 18 : 0)}px, ${translateZ + (hoveredCardIndex === index ? 45 : 0)}px) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale3d(${scaleX * (hoveredCardIndex === index ? 1.035 : 1)}, ${scaleY * (hoveredCardIndex === index ? 1.035 : 1)}, 1)`,
+                    transform: `translate3d(${translateX}px, ${translateY}px, ${translateZ + (hoveredCardIndex === index ? 45 : 0)}px) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale3d(${scaleX * (hoveredCardIndex === index ? 1.035 : 1)}, ${scaleY * (hoveredCardIndex === index ? 1.035 : 1)}, 1)`,
                     zIndex: hoveredCardIndex === index ? 60 : Math.max(1, 50 - Math.round(absoluteDistance * 5)),
                     opacity: !isWithinVisibleRange ? 0 : isCompactSideCard ? 0.72 : Math.max(0, 1 - visualProgress * 0.48),
                     filter: isCentered
