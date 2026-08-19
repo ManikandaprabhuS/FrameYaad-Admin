@@ -4,6 +4,30 @@ import type { ApiEnvelope } from './contracts';
 export type CustomerWishlistItem = {
   id: string;
   productIdentifier: string;
+  createdAt?: string;
+  product: {
+    id: string;
+    productIdentifier: string;
+    productName: string;
+    material?: {
+      brandName?: string;
+      material?: string;
+      isActive?: boolean;
+    } | null;
+    variants?: Array<{
+      id: string;
+      frameSize: string;
+      price: number | string;
+      mrp?: number | string | null;
+      stockQuantity?: number | string;
+      isActive?: boolean;
+    }>;
+    images?: Array<{
+      id: string;
+      imageUrl: string;
+      isPrimary?: boolean;
+    }>;
+  };
 };
 
 export const customerWishlistService = {

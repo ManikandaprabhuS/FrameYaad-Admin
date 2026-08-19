@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useForm, type UseFormRegisterReturn } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   ArrowRight,
   Headphones,
@@ -15,6 +15,7 @@ import {
   Phone,
   Save,
   ShoppingBag,
+  Trash2,
   UserRound,
 } from 'lucide-react';
 
@@ -22,6 +23,8 @@ import femaleCustomerAvatar from '../../../assets/customer-avatar-female.svg';
 import maleCustomerAvatar from '../../../assets/customer-avatar-male.svg';
 import { orderService } from '../../../services/order.service';
 import type { Order, User } from '../../../types';
+import { useCustomerCommerceStore } from '../../../store/customerCommerceStore';
+import { showError, showSuccess } from '../../../utils/toast';
 
 type ProfileValues = {
   name: string;
@@ -50,6 +53,7 @@ type Props = {
 };
 
 const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpdate, onLogout, onChangePassword }) => {
+  const location = useLocation();
   const profileForm = useForm<ProfileValues>();
   const passwordForm = useForm<PasswordValues>({
     defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
@@ -58,6 +62,10 @@ const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpd
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersError, setOrdersError] = useState<string | null>(null);
+  const wishlistItems = useCustomerCommerceStore((state) => state.wishlistItems);
+  const wishlistLoading = useCustomerCommerceStore((state) => state.wishlistLoading);
+  const loadWishlist = useCustomerCommerceStore((state) => state.loadWishlist);
+  const toggleWishlist = useCustomerCommerceStore((state) => state.toggleWishlist);
   const genderAvatar = user.gender === 'FEMALE'
     ? femaleCustomerAvatar
     : user.gender === 'MALE'
@@ -96,6 +104,25 @@ const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpd
     };
   }, []);
 
+  useEffect(() => {
+    void loadWishlist(user.id);
+  }, [loadWishlist, user.id]);
+
+  useEffect(() => {
+    if (location.hash !== '#wishlist') return;
+    const frame = window.requestAnimationFrame(() => document.getElementById('wishlist')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    return () => window.cancelAnimationFrame(frame);
+  }, [location.hash]);
+
+  const removeWishlistItem = async (productIdentifier: string) => {
+    try {
+      await toggleWishlist(productIdentifier);
+      showSuccess('Product removed from wishlist');
+    } catch {
+      showError('Wishlist could not be updated. Please try again.');
+    }
+  };
+
   return (
     <section className="bg-[#f7f7f5] px-3 py-5 sm:px-6 sm:py-8">
       <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
@@ -114,7 +141,7 @@ const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpd
             <AccountNavLink href="#orders-history" icon={<ShoppingBag />} label="Orders" description="View your order history" active />
             <AccountNavLink href="#profile-information" icon={<UserRound />} label="Profile" description="Manage your personal info" />
             <AccountNavLink href="#profile-information" icon={<MapPinned />} label="Addresses" description="Manage delivery addresses" />
-            <AccountNavLink icon={<Heart />} label="Wishlist" description="Your saved items" disabled />
+            <AccountNavLink href="#wishlist" icon={<Heart />} label="Wishlist" description="Your saved items" />
             <AccountNavLink href="#change-password" icon={<KeyRound />} label="Change Password" description="Update your password" />
             <button type="button" onClick={() => void onLogout()} disabled={loading} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-black/5 disabled:opacity-50">
               <LogOut className="h-4 w-4 shrink-0" />
@@ -144,6 +171,45 @@ const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpd
               )}
               {!ordersLoading && orders.map((order) => <CustomerOrderCard key={order.id} order={order} />)}
             </div>
+          </section>
+
+          <section id="wishlist" className="scroll-mt-24">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-black sm:text-xl">Wishlist</h2>
+              {!wishlistLoading && <span className="text-[10px] font-bold text-black/45">{wishlistItems.length} saved {wishlistItems.length === 1 ? 'item' : 'items'}</span>}
+            </div>
+            {wishlistLoading ? (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 3 }, (_, index) => <div key={index} className="h-44 animate-pulse rounded-2xl border border-black/5 bg-black/[0.04]" />)}</div>
+            ) : wishlistItems.length === 0 ? (
+              <div className="rounded-2xl border border-black/10 bg-white p-8 text-center shadow-[0_8px_28px_rgba(0,0,0,0.03)]">
+                <Heart className="mx-auto h-7 w-7 text-black/30" />
+                <p className="mt-3 text-sm font-bold">Your wishlist is empty</p>
+                <p className="mt-1 text-xs text-black/45">Save frames you love and they will appear here.</p>
+                <Link to="/products" className="mt-4 inline-flex rounded-lg bg-black px-4 py-2 text-xs font-bold text-white">Explore frames</Link>
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {wishlistItems.map((item) => {
+                  const image = item.product.images?.find((entry) => entry.isPrimary)?.imageUrl ?? item.product.images?.[0]?.imageUrl;
+                  const activeVariants = item.product.variants?.filter((variant) => variant.isActive !== false) ?? [];
+                  const price = activeVariants.length > 0 ? Math.min(...activeVariants.map((variant) => Number(variant.price))) : 0;
+                  return (
+                    <article key={item.id} className="group overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[0_8px_28px_rgba(0,0,0,0.03)]">
+                      <Link to={`/product/${item.product.id}`} className="block aspect-[4/3] overflow-hidden bg-[#f4f1ed]">
+                        {image ? <img src={image} alt={item.product.productName} loading="lazy" className="h-full w-full object-cover transition duration-300 group-hover:scale-105" /> : <span className="grid h-full place-items-center text-xs font-semibold text-black/35">Image unavailable</span>}
+                      </Link>
+                      <div className="p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0"><Link to={`/product/${item.product.id}`} className="block truncate text-sm font-black hover:underline">{item.product.productName}</Link><p className="mt-1 truncate text-[10px] text-black/45">{item.product.material?.material || 'Frame'}{activeVariants[0]?.frameSize ? ` · ${activeVariants[0].frameSize}` : ''}</p></div>
+                          <button type="button" onClick={() => void removeWishlistItem(item.productIdentifier)} aria-label={`Remove ${item.product.productName} from wishlist`} className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-black/10 text-black/55 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
+                        </div>
+                        {price > 0 && <p className="mt-3 text-base font-black">₹{price.toLocaleString('en-IN')}</p>}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
           </section>
 
           <div className="grid items-start gap-5 xl:grid-cols-2">

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { customerWishlistService } from '../services/customer-wishlist.service';
+import { customerWishlistService, type CustomerWishlistItem } from '../services/customer-wishlist.service';
 
 const CART_STORAGE_KEY = 'frameyaad-customer-cart-v1';
 
@@ -41,6 +41,7 @@ const writeCart = (items: CustomerCartItem[]) => {
 type CommerceState = {
   cartItems: CustomerCartItem[];
   wishlistByProductIdentifier: Record<string, string>;
+  wishlistItems: CustomerWishlistItem[];
   wishlistLoadedForUserId: string | null;
   wishlistLoading: boolean;
   addCartItem: (item: Omit<CustomerCartItem, 'key'>) => void;
@@ -55,6 +56,7 @@ type CommerceState = {
 export const useCustomerCommerceStore = create<CommerceState>((set, get) => ({
   cartItems: readCart(),
   wishlistByProductIdentifier: {},
+  wishlistItems: [],
   wishlistLoadedForUserId: null,
   wishlistLoading: false,
 
@@ -96,6 +98,7 @@ export const useCustomerCommerceStore = create<CommerceState>((set, get) => ({
       const items = await customerWishlistService.list();
       set({
         wishlistByProductIdentifier: Object.fromEntries(items.map((item) => [item.productIdentifier, item.id])),
+        wishlistItems: items,
         wishlistLoadedForUserId: userId,
         wishlistLoading: false,
       });
@@ -111,16 +114,20 @@ export const useCustomerCommerceStore = create<CommerceState>((set, get) => ({
       set((state) => {
         const next = { ...state.wishlistByProductIdentifier };
         delete next[productIdentifier];
-        return { wishlistByProductIdentifier: next };
+        return {
+          wishlistByProductIdentifier: next,
+          wishlistItems: state.wishlistItems.filter((item) => item.id !== existingId),
+        };
       });
       return false;
     }
     const created = await customerWishlistService.add(productIdentifier);
     set((state) => ({
       wishlistByProductIdentifier: { ...state.wishlistByProductIdentifier, [productIdentifier]: created.id },
+      wishlistItems: [created, ...state.wishlistItems.filter((item) => item.id !== created.id)],
     }));
     return true;
   },
 
-  clearWishlist: () => set({ wishlistByProductIdentifier: {}, wishlistLoadedForUserId: null, wishlistLoading: false }),
+  clearWishlist: () => set({ wishlistByProductIdentifier: {}, wishlistItems: [], wishlistLoadedForUserId: null, wishlistLoading: false }),
 }));
