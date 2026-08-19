@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   Sparkles,
+  Trash2,
   Upload,
 } from 'lucide-react';
 
@@ -144,6 +145,28 @@ const CustomerProductDetailsPage: React.FC = () => {
     }
   };
 
+  const clearCrop = () => {
+    if (!croppedImage) return;
+
+    const nextImages = { ...croppedImages };
+    delete nextImages[cropKey];
+
+    try {
+      const storageKey = `frameyaad-crops:${slug}`;
+      if (Object.keys(nextImages).length === 0) {
+        window.localStorage.removeItem(storageKey);
+      } else {
+        window.localStorage.setItem(storageKey, JSON.stringify(nextImages));
+      }
+      setCroppedImages(nextImages);
+      setCropSource('');
+      setSelectedGalleryImage('');
+      showSuccess(`Photo cleared for ${frameRatio.label}.`);
+    } catch {
+      showError('Unable to clear the saved photo. Please try again.');
+    }
+  };
+
   if (loading && !currentProduct) return <ProductDetailsSkeleton />;
 
   if (!currentProduct) {
@@ -199,9 +222,16 @@ const CustomerProductDetailsPage: React.FC = () => {
 
             <div className="order-3 grid gap-4 md:grid-cols-2 xl:mt-4">
               <div className="rounded-xl border border-black/10 bg-white p-4">
-                <div className="mb-3 flex items-center justify-between">
+                <div className="mb-3 flex items-start justify-between gap-3">
                   <div><h2 className="text-sm font-black">Upload Your Photo</h2><p className="mt-0.5 text-[10px] text-black/45">JPG, PNG or WEBP · maximum 12 MB</p></div>
-                  {croppedImage && <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600"><Check className="h-3 w-3" /> Saved locally</span>}
+                  {croppedImage && (
+                    <div className="flex shrink-0 flex-col items-end gap-1.5">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600"><Check className="h-3 w-3" /> Saved locally</span>
+                      <button type="button" onClick={clearCrop} className="inline-flex items-center gap-1 rounded-md border border-black/15 px-2 py-1 text-[10px] font-bold text-black transition hover:border-black hover:bg-black hover:text-white" aria-label={`Clear saved photo for ${frameRatio.label}`}>
+                        <Trash2 className="h-3 w-3" /> Clear
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => { handleFile(event.target.files?.[0]); event.currentTarget.value = ''; }} />
                 <button type="button" onClick={() => fileInputRef.current?.click()} className="flex min-h-28 w-full flex-col items-center justify-center rounded-lg border border-dashed border-black/25 bg-[#fafafa] transition hover:border-black hover:bg-white">
