@@ -43,7 +43,7 @@ export const useCustomerCommerce = () => {
     }
   }, [customerLoggedIn, requestLogin, toggleStoredWishlist]);
 
-  const addToCart = useCallback((product: Product, variant: ProductVariant, quantity = 1) => {
+  const addToCart = useCallback((product: Product, variant: ProductVariant, quantity = 1, selectedColor?: string) => {
     const stockQuantity = Number(variant.stockQuantity ?? 0);
     if (stockQuantity <= 0) {
       showError('This product variant is out of stock.');
@@ -58,7 +58,7 @@ export const useCustomerCommerce = () => {
       imageUrl: product.images?.find((image) => image.isPrimary)?.imageUrl ?? product.images?.[0]?.imageUrl,
       material: product.material,
       frameSize: variant.frameSize,
-      color: variant.color,
+      color: selectedColor || variant.color,
       mountType: variant.mountType,
       glassType: variant.glassType,
       unitPrice,

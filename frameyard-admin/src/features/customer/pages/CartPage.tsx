@@ -7,6 +7,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useCustomerCommerceStore } from '../../../store/customerCommerceStore';
 import { showError } from '../../../utils/toast';
 import { couponService, type CouponValidationResult } from '../../../services/coupon.service';
+import ColorSwatch from '../components/ColorSwatch';
 
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
@@ -72,7 +73,7 @@ const CartPage: React.FC = () => {
           <article key={item.key} className="flex gap-4 rounded-xl border border-black/10 bg-white p-3 shadow-sm sm:p-4">
             <div className="h-24 w-20 shrink-0 overflow-hidden rounded-lg bg-black/5 sm:h-28 sm:w-24">{item.imageUrl && <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />}</div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-2"><div><h2 className="truncate text-sm font-black">{item.name}</h2><p className="mt-1 text-xs text-black/50">{item.frameSize} · {item.material} · {item.color || 'Standard'}</p></div><button type="button" onClick={() => removeItem(item.key)} aria-label={`Remove ${item.name} from cart`} className="rounded-lg p-2 text-black/45 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /></button></div>
+              <div className="flex items-start justify-between gap-2"><div className="min-w-0"><h2 className="truncate text-sm font-black">{item.name}</h2><p className="mt-1 text-xs text-black/50">{item.frameSize} · {item.material}</p><div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] font-semibold text-black/60"><span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-2 py-1"><ColorSwatch color={item.color} className="h-4 w-4" /> Color</span><span className="rounded-full border border-black/10 px-2 py-1">Mount: {item.mountType || 'None'}</span><span className="rounded-full border border-black/10 px-2 py-1">Glass: {item.glassType || 'None'}</span></div></div><button type="button" onClick={() => removeItem(item.key)} aria-label={`Remove ${item.name} from cart`} className="rounded-lg p-2 text-black/45 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /></button></div>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex h-9 items-center rounded-lg border border-black/15"><button type="button" onClick={() => updateQuantity(item.key, item.quantity - 1)} aria-label="Decrease quantity" className="grid h-full w-9 place-items-center"><Minus className="h-3.5 w-3.5" /></button><span className="w-8 text-center text-xs font-black">{item.quantity}</span><button type="button" onClick={() => updateQuantity(item.key, item.quantity + 1)} aria-label="Increase quantity" className="grid h-full w-9 place-items-center"><Plus className="h-3.5 w-3.5" /></button></div>
                 <p className="text-base font-black">₹{(item.unitPrice * item.quantity).toLocaleString('en-IN')}</p>

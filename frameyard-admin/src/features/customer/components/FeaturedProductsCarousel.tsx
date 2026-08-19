@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Product } from '../../../types';
 import FeaturedProductCard, { FeaturedProductPricing } from './FeaturedProductCard';
 import { useCustomerCommerce } from '../hooks/useCustomerCommerce';
@@ -35,6 +36,7 @@ const getProductPricing = (product: Product): FeaturedProductPricing => {
 };
 
 const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ products }) => {
+  const navigate = useNavigate();
   const mobileTrackRef = useRef<HTMLDivElement | null>(null);
   const wheelLockedRef = useRef(false);
   const [cachedProducts, setCachedProducts] = useState<Product[]>(readCachedProducts);
@@ -218,7 +220,7 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
                   product={product}
                   pricing={getProductPricing(product)}
                   isActive={isActive}
-                  onSelect={() => selectDesktopCard(index)}
+                  onSelect={() => isActive ? navigate(`/product/${product.id}`) : selectDesktopCard(index)}
                   wished={customerLoggedIn && Boolean(product.productIdentifier && wishlist[product.productIdentifier])}
                   onToggleWishlist={() => void toggleWishlist(product)}
                   onAddToCart={() => {
@@ -271,7 +273,7 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
                     product={product}
                     pricing={getProductPricing(product)}
                     isActive={isActive}
-                    onSelect={() => selectMobileCard(originalIndex)}
+                    onSelect={() => isActive ? navigate(`/product/${product.id}`) : selectMobileCard(originalIndex)}
                     wished={customerLoggedIn && Boolean(product.productIdentifier && wishlist[product.productIdentifier])}
                     onToggleWishlist={() => void toggleWishlist(product)}
                     onAddToCart={() => {

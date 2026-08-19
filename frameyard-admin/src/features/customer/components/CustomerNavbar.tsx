@@ -99,6 +99,12 @@ const CustomerNavbar: React.FC = () => {
                 </span>
               )}
           </button>
+          <Link to="/cart" className="relative rounded-full p-2 text-black" title="Cart" aria-label={`Cart, ${cartCount} ${cartCount === 1 ? 'item' : 'items'}`}>
+            <ShoppingCart className="h-5 w-5" />
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-black px-1 text-[10px] font-bold text-white">
+              {cartCount > 99 ? '99+' : cartCount}
+            </span>
+          </Link>
           <button
             className="rounded-lg border border-outline-variant p-2"
             onClick={() => setMenuOpen((open) => !open)}

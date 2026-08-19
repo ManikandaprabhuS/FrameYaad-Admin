@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import ImageCropModal from '../components/ImageCropModal';
+import ColorSwatch from '../components/ColorSwatch';
 import { useProductStore } from '../../../store/productStore';
 import type { ProductVariant } from '../../../types';
 import { showError, showSuccess } from '../../../utils/toast';
@@ -282,9 +283,8 @@ const CustomerProductDetailsPage: React.FC = () => {
             <OptionGroup number="3" title="Select Color / Finish">
               <div className="flex flex-wrap gap-3">
                 {colors.length === 0 ? <span className="text-xs text-black/45">Standard finish</span> : colors.map((color) => (
-                  <button key={color} type="button" onClick={() => setSelectedColor(color)} className="group flex flex-col items-center gap-1.5 text-[9px] font-semibold text-black/60">
-                    <span className={`grid h-8 w-8 place-items-center rounded-full border-2 ${effectiveColor === color ? 'border-black' : 'border-transparent'}`}><span className="h-6 w-6 rounded-full border border-black/10" style={{ background: color.startsWith('#') ? color : color.toLowerCase().includes('black') ? '#171717' : color.toLowerCase().includes('white') ? '#f8f8f8' : color.toLowerCase().includes('walnut') ? '#79543a' : color.toLowerCase().includes('oak') ? '#c79d68' : '#b7a58e' }} /></span>
-                    <span className="max-w-16 truncate">{color}</span>
+                  <button key={color} type="button" onClick={() => setSelectedColor(color)} aria-label={`Select color ${color}`} aria-pressed={effectiveColor === color} title={color} className="group flex items-center justify-center">
+                    <span className={`grid h-9 w-9 place-items-center rounded-full border-2 transition ${effectiveColor === color ? 'border-black' : 'border-transparent group-hover:border-black/25'}`}><ColorSwatch color={color} className="h-7 w-7" /></span>
                   </button>
                 ))}
               </div>
@@ -298,8 +298,8 @@ const CustomerProductDetailsPage: React.FC = () => {
               <div className="flex flex-wrap gap-2">{glassTypes.map((value) => <OptionPill key={value} active={selectedVariant?.glassType === value} onClick={() => chooseVariantValue('glassType', value)}>{value}</OptionPill>)}</div>
             </OptionGroup>
 
-            <div className="mt-5 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[10px] font-semibold text-emerald-700">
-              Selected: {selectedVariant?.frameSize || '—'} · {currentProduct.material || '—'} · {effectiveColor || 'Standard'} · {selectedVariant?.mountType || '—'} · {selectedVariant?.glassType || '—'}
+            <div className="mt-5 flex flex-wrap items-center gap-1.5 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-[10px] font-semibold text-emerald-700">
+              <span>Selected: {selectedVariant?.frameSize || '—'} · {currentProduct.material || '—'} ·</span><ColorSwatch color={effectiveColor} className="h-4 w-4" /><span>· {selectedVariant?.mountType || '—'} · {selectedVariant?.glassType || '—'}</span>
             </div>
 
             <div className="mt-4 flex flex-col gap-3 min-[380px]:flex-row min-[380px]:items-center">
@@ -308,7 +308,7 @@ const CustomerProductDetailsPage: React.FC = () => {
                 <span className="w-8 text-center text-xs font-black">{quantity}</span>
                 <button type="button" aria-label="Increase quantity" onClick={() => setQuantity((current) => Math.min(Number(selectedVariant?.stockQuantity ?? 1), current + 1))} className="grid h-full w-10 place-items-center"><Plus className="h-3.5 w-3.5" /></button>
               </div>
-              <button type="button" onClick={() => { if (selectedVariant) addToCart(currentProduct, selectedVariant, quantity); }} disabled={!selectedVariant || Number(selectedVariant.stockQuantity) <= 0} className="inline-flex h-11 w-full flex-1 items-center justify-center gap-2 rounded-lg bg-black text-xs font-black text-white disabled:bg-black/30"><ShoppingBag className="h-4 w-4" /> Add to Bag</button>
+              <button type="button" onClick={() => { if (selectedVariant) addToCart(currentProduct, selectedVariant, quantity, effectiveColor); }} disabled={!selectedVariant || Number(selectedVariant.stockQuantity) <= 0} className="inline-flex h-11 w-full flex-1 items-center justify-center gap-2 rounded-lg bg-black text-xs font-black text-white disabled:bg-black/30"><ShoppingBag className="h-4 w-4" /> Add to Bag</button>
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-2 border-t border-black/10 pt-4 sm:grid-cols-4">
