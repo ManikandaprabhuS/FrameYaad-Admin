@@ -9,7 +9,16 @@ export type Coupon = {
   expiresAt: string; createdBy?: { name: string; email: string } | null; createdAt: string; updatedAt: string;
 };
 export type CouponPayload = Omit<Coupon, 'id' | 'usageCount' | 'createdBy' | 'createdAt' | 'updatedAt'>;
+export type CouponValidationResult = {
+  coupon: { code: string; couponType: string; discountType: string; discountValue: number };
+  subtotal: number;
+  eligibleSubtotal: number;
+  discountAmount: number;
+  total: number;
+};
 export const couponService = {
+  validate: async (payload: { code: string; items: Array<{ productVariantId: string; unitPrice: number; quantity: number }> }) =>
+    (await api.post('/coupons/validate', payload)).data.data as CouponValidationResult,
   list: async (params: Record<string, unknown> = {}) => {
     const response = await api.get('/coupons', { params });
     return response.data.data as { coupons: Coupon[]; pagination: Pagination };

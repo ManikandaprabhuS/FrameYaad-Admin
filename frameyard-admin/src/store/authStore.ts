@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import axios from 'axios';
 import { User } from '../types';
 import { authService, type CustomerRegistrationInput } from '../services/auth.service';
+import { useCustomerCommerceStore } from './customerCommerceStore';
 
 const AUTH_TOKEN_KEY = 'fy_auth_token';
 
@@ -121,6 +122,7 @@ if (token) {
         return false;
       }
       setStoredAuthToken(response.accessToken);
+      useCustomerCommerceStore.getState().setCartOwner(response.user.id, true);
       set({
         user: response.user,
         token: response.accessToken,
@@ -154,6 +156,7 @@ if (token) {
 
       const login = await authService.customerLogin(input.email, input.password);
       setStoredAuthToken(login.accessToken);
+      useCustomerCommerceStore.getState().setCartOwner(login.user.id, true);
       set({
         user: login.user,
         token: login.accessToken,
@@ -182,6 +185,7 @@ if (token) {
     await authService.logout();
 
     clearStoredAuthToken();
+    useCustomerCommerceStore.getState().setCartOwner(null);
 
     set({
       user: null,
@@ -193,6 +197,7 @@ if (token) {
   } catch {
 
     clearStoredAuthToken();
+    useCustomerCommerceStore.getState().setCartOwner(null);
 
     set({
       user: null,
@@ -211,6 +216,8 @@ if (token) {
     const user =await authService.me();
    const token = getStoredAuthToken();
 
+   useCustomerCommerceStore.getState().setCartOwner(user.role === 'CUSTOMER' ? user.id : null, user.role === 'CUSTOMER');
+
    set({
   user,
   token,
@@ -227,6 +234,7 @@ if (token) {
       loading: false,
     });
     clearStoredAuthToken();
+    useCustomerCommerceStore.getState().setCartOwner(null);
   }
 },
 
@@ -247,6 +255,7 @@ if (token) {
     try {
       await authService.changePassword(currentPassword, newPassword);
       clearStoredAuthToken();
+      useCustomerCommerceStore.getState().setCartOwner(null);
       set({ user: null, token: null, isAuthenticated: false, loading: false });
       return true;
     } catch (err: unknown) {

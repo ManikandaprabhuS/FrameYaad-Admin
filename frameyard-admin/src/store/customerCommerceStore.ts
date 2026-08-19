@@ -2,7 +2,11 @@ import { create } from 'zustand';
 
 import { customerWishlistService, type CustomerWishlistItem } from '../services/customer-wishlist.service';
 
-const CART_STORAGE_KEY = 'frameyaad-customer-cart-v1';
+const LEGACY_CART_STORAGE_KEY = 'frameyaad-customer-cart-v1';
+const GUEST_CART_OWNER = 'guest';
+
+const cartStorageKey = (ownerId: string | null) =>
+  `${LEGACY_CART_STORAGE_KEY}:${ownerId ? `customer:${ownerId}` : GUEST_CART_OWNER}`;
 
 export type CustomerCartItem = {
   key: string;
@@ -21,24 +25,45 @@ export type CustomerCartItem = {
   stockQuantity: number;
 };
 
-const readCart = (): CustomerCartItem[] => {
+const readCart = (ownerId: string | null): CustomerCartItem[] => {
   try {
-    const stored = window.localStorage.getItem(CART_STORAGE_KEY);
+    const stored = window.localStorage.getItem(cartStorageKey(ownerId));
     return stored ? (JSON.parse(stored) as CustomerCartItem[]) : [];
   } catch {
     return [];
   }
 };
 
-const writeCart = (items: CustomerCartItem[]) => {
+const readLegacyCart = (): CustomerCartItem[] => {
   try {
-    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+    const stored = window.localStorage.getItem(LEGACY_CART_STORAGE_KEY);
+    return stored ? (JSON.parse(stored) as CustomerCartItem[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeCart = (ownerId: string | null, items: CustomerCartItem[]) => {
+  try {
+    window.localStorage.setItem(cartStorageKey(ownerId), JSON.stringify(items));
   } catch {
     // Keep the cart available for this session if browser storage is unavailable.
   }
 };
 
+const mergeCartItems = (...groups: CustomerCartItem[][]): CustomerCartItem[] => {
+  const merged = new Map<string, CustomerCartItem>();
+  groups.flat().forEach((item) => {
+    const existing = merged.get(item.key);
+    merged.set(item.key, existing
+      ? { ...existing, quantity: Math.min(existing.stockQuantity, existing.quantity + item.quantity) }
+      : item);
+  });
+  return [...merged.values()];
+};
+
 type CommerceState = {
+  cartOwnerId: string | null;
   cartItems: CustomerCartItem[];
   wishlistByProductIdentifier: Record<string, string>;
   wishlistItems: CustomerWishlistItem[];
@@ -48,13 +73,15 @@ type CommerceState = {
   updateCartQuantity: (key: string, quantity: number) => void;
   removeCartItem: (key: string) => void;
   clearCart: () => void;
+  setCartOwner: (userId: string | null, claimGuestCart?: boolean) => void;
   loadWishlist: (userId: string) => Promise<void>;
   toggleWishlist: (productIdentifier: string) => Promise<boolean>;
   clearWishlist: () => void;
 };
 
 export const useCustomerCommerceStore = create<CommerceState>((set, get) => ({
-  cartItems: readCart(),
+  cartOwnerId: null,
+  cartItems: readCart(null),
   wishlistByProductIdentifier: {},
   wishlistItems: [],
   wishlistLoadedForUserId: null,
@@ -68,7 +95,7 @@ export const useCustomerCommerceStore = create<CommerceState>((set, get) => ({
         ? { ...cartItem, quantity: Math.min(cartItem.stockQuantity, cartItem.quantity + item.quantity) }
         : cartItem)
       : [...state.cartItems, { ...item, key, quantity: Math.min(item.stockQuantity, item.quantity) }];
-    writeCart(cartItems);
+    writeCart(state.cartOwnerId, cartItems);
     return { cartItems };
   }),
 
@@ -76,19 +103,38 @@ export const useCustomerCommerceStore = create<CommerceState>((set, get) => ({
     const cartItems = state.cartItems.map((item) => item.key === key
       ? { ...item, quantity: Math.max(1, Math.min(item.stockQuantity, quantity)) }
       : item);
-    writeCart(cartItems);
+    writeCart(state.cartOwnerId, cartItems);
     return { cartItems };
   }),
 
   removeCartItem: (key) => set((state) => {
     const cartItems = state.cartItems.filter((item) => item.key !== key);
-    writeCart(cartItems);
+    writeCart(state.cartOwnerId, cartItems);
     return { cartItems };
   }),
 
   clearCart: () => {
-    writeCart([]);
+    writeCart(get().cartOwnerId, []);
     set({ cartItems: [] });
+  },
+
+  setCartOwner: (userId, claimGuestCart = false) => {
+    const currentOwnerId = get().cartOwnerId;
+    if (currentOwnerId === userId) return;
+
+    let cartItems = readCart(userId);
+    if (userId && claimGuestCart) {
+      cartItems = mergeCartItems(cartItems, readCart(null), readLegacyCart());
+      writeCart(userId, cartItems);
+      try {
+        window.localStorage.removeItem(cartStorageKey(null));
+        window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
+      } catch {
+        // The customer cart is still available in memory when storage is unavailable.
+      }
+    }
+
+    set({ cartOwnerId: userId, cartItems });
   },
 
   loadWishlist: async (userId) => {
