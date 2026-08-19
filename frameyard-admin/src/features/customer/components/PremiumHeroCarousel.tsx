@@ -287,28 +287,17 @@ const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loa
     window.setTimeout(() => { movedRef.current = false; }, 0);
   };
 
-  useEffect(() => {
-    const viewport = viewportRef.current;
-    if (!viewport || baseLength === 0) return;
+  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    const horizontalIntent = Math.abs(event.deltaX) > Math.abs(event.deltaY) || event.shiftKey;
+    if (!horizontalIntent) return;
 
-    const handleWheel = (event: WheelEvent) => {
-      const horizontalIntent = Math.abs(event.deltaX) > Math.abs(event.deltaY) || event.shiftKey;
-      if (!horizontalIntent) return;
-
-      event.preventDefault();
-      const now = event.timeStamp;
-      if (now - lastWheelMoveRef.current < SNAP_DURATION_MS) return;
-      lastWheelMoveRef.current = now;
-
-      setInteractionPaused(true);
-      if (resumeTimerRef.current !== null) window.clearTimeout(resumeTimerRef.current);
-      resumeTimerRef.current = window.setTimeout(() => setInteractionPaused(false), AUTOPLAY_RESUME_DELAY_MS);
-      snapTo(position + ((event.deltaX || event.deltaY) > 0 ? 1 : -1));
-    };
-
-    viewport.addEventListener('wheel', handleWheel, { passive: false });
-    return () => viewport.removeEventListener('wheel', handleWheel);
-  }, [baseLength, position, snapTo]);
+    event.preventDefault();
+    const now = event.timeStamp;
+    if (now - lastWheelMoveRef.current < SNAP_DURATION_MS) return;
+    lastWheelMoveRef.current = now;
+    pauseAfterInteraction();
+    moveBy((event.deltaX || event.deltaY) > 0 ? 1 : -1);
+  };
 
   const handleCardClick = (index: number, product: Product) => {
     if (movedRef.current) return;
@@ -336,6 +325,7 @@ const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loa
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
+        onWheel={handleWheel}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         role="region"

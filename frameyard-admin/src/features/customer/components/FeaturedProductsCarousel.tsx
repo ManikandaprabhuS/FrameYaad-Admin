@@ -37,7 +37,6 @@ const getProductPricing = (product: Product): FeaturedProductPricing => {
 
 const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ products }) => {
   const navigate = useNavigate();
-  const desktopCarouselRef = useRef<HTMLDivElement | null>(null);
   const mobileTrackRef = useRef<HTMLDivElement | null>(null);
   const wheelLockedRef = useRef(false);
   const [cachedProducts, setCachedProducts] = useState<Product[]>(readCachedProducts);
@@ -110,27 +109,19 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
     }
   };
 
-  useEffect(() => {
-    const carousel = desktopCarouselRef.current;
-    if (!carousel) return;
+  const handleDesktopWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (Math.abs(delta) < 4) return;
 
-    const handleDesktopWheel = (event: WheelEvent) => {
-      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-      if (Math.abs(delta) < 4) return;
+    event.preventDefault();
+    if (wheelLockedRef.current) return;
 
-      event.preventDefault();
-      if (wheelLockedRef.current) return;
-
-      wheelLockedRef.current = true;
-      setDesktopIndex((current) => current + (delta > 0 ? 1 : -1));
-      window.setTimeout(() => {
-        wheelLockedRef.current = false;
-      }, 420);
-    };
-
-    carousel.addEventListener('wheel', handleDesktopWheel, { passive: false });
-    return () => carousel.removeEventListener('wheel', handleDesktopWheel);
-  }, []);
+    wheelLockedRef.current = true;
+    setDesktopIndex((current) => current + (delta > 0 ? 1 : -1));
+    window.setTimeout(() => {
+      wheelLockedRef.current = false;
+    }, 420);
+  };
 
   const selectDesktopCard = (index: number) => {
     setDesktopIndex(index);
@@ -194,9 +185,9 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
         </div>
 
         <div
-          ref={desktopCarouselRef}
           className="relative mx-auto hidden h-[400px] max-w-[1200px] overflow-hidden px-6 pt-16 md:block"
           aria-label="Featured product carousel"
+          onWheel={handleDesktopWheel}
         >
           <div
             className={`absolute left-1/2 top-16 flex items-center gap-6 px-2 will-change-transform ${
