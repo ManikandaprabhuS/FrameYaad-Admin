@@ -16,9 +16,14 @@ export type CustomerWishlistItem = {
     } | null;
     variants?: Array<{
       id: string;
+      productId?: string;
+      color?: string | null;
       frameSize: string;
+      mountType?: string;
+      glassType?: string;
       price: number | string;
       mrp?: number | string | null;
+      offerPrice?: number | string | null;
       stockQuantity?: number | string;
       isActive?: boolean;
     }>;

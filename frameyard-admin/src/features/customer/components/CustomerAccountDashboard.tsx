@@ -22,6 +22,7 @@ import {
 import femaleCustomerAvatar from '../../../assets/customer-avatar-female.svg';
 import maleCustomerAvatar from '../../../assets/customer-avatar-male.svg';
 import { orderService } from '../../../services/order.service';
+import type { CustomerWishlistItem } from '../../../services/customer-wishlist.service';
 import type { Order, User } from '../../../types';
 import { useCustomerCommerceStore } from '../../../store/customerCommerceStore';
 import { showError, showSuccess } from '../../../utils/toast';
@@ -66,6 +67,9 @@ const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpd
   const wishlistLoading = useCustomerCommerceStore((state) => state.wishlistLoading);
   const loadWishlist = useCustomerCommerceStore((state) => state.loadWishlist);
   const toggleWishlist = useCustomerCommerceStore((state) => state.toggleWishlist);
+  const addCartItem = useCustomerCommerceStore((state) => state.addCartItem);
+  const [showAllWishlist, setShowAllWishlist] = useState(false);
+  const activeSection = location.hash.slice(1) || 'orders-history';
   const genderAvatar = user.gender === 'FEMALE'
     ? femaleCustomerAvatar
     : user.gender === 'MALE'
@@ -109,8 +113,9 @@ const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpd
   }, [loadWishlist, user.id]);
 
   useEffect(() => {
-    if (location.hash !== '#wishlist') return;
-    const frame = window.requestAnimationFrame(() => document.getElementById('wishlist')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    const sectionId = location.hash.slice(1);
+    if (!sectionId) return;
+    const frame = window.requestAnimationFrame(() => document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     return () => window.cancelAnimationFrame(frame);
   }, [location.hash]);
 
@@ -120,6 +125,36 @@ const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpd
       showSuccess('Product removed from wishlist');
     } catch {
       showError('Wishlist could not be updated. Please try again.');
+    }
+  };
+
+  const moveWishlistItemToCart = async (item: CustomerWishlistItem) => {
+    const variant = item.product.variants?.find((entry) => entry.isActive !== false && Number(entry.stockQuantity ?? 0) > 0);
+    if (!variant) {
+      showError('This product is currently out of stock.');
+      return;
+    }
+
+    try {
+      await toggleWishlist(item.productIdentifier);
+      addCartItem({
+        productId: item.product.id,
+        productIdentifier: item.productIdentifier,
+        variantId: variant.id,
+        name: item.product.productName,
+        imageUrl: item.product.images?.find((image) => image.isPrimary)?.imageUrl ?? item.product.images?.[0]?.imageUrl,
+        material: item.product.material?.material || 'Frame',
+        frameSize: variant.frameSize,
+        color: variant.color,
+        mountType: variant.mountType || 'NONE',
+        glassType: variant.glassType || 'NONE',
+        unitPrice: Number(variant.offerPrice ?? variant.price ?? 0),
+        quantity: 1,
+        stockQuantity: Number(variant.stockQuantity ?? 0),
+      });
+      showSuccess('Product moved to cart');
+    } catch {
+      showError('Product could not be moved to cart. Please try again.');
     }
   };
 
@@ -138,11 +173,11 @@ const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpd
           </div>
 
           <nav className="space-y-1 py-3" aria-label="Customer account">
-            <AccountNavLink href="#orders-history" icon={<ShoppingBag />} label="Orders" description="View your order history" active />
-            <AccountNavLink href="#profile-information" icon={<UserRound />} label="Profile" description="Manage your personal info" />
-            <AccountNavLink href="#profile-information" icon={<MapPinned />} label="Addresses" description="Manage delivery addresses" />
-            <AccountNavLink href="#wishlist" icon={<Heart />} label="Wishlist" description="Your saved items" />
-            <AccountNavLink href="#change-password" icon={<KeyRound />} label="Change Password" description="Update your password" />
+            <AccountNavLink href="#orders-history" icon={<ShoppingBag />} label="Orders" description="View your order history" active={activeSection === 'orders-history'} />
+            <AccountNavLink href="#profile-information" icon={<UserRound />} label="Profile" description="Manage your personal info" active={activeSection === 'profile-information'} />
+            <AccountNavLink href="#addresses" icon={<MapPinned />} label="Addresses" description="Manage delivery addresses" active={activeSection === 'addresses'} />
+            <AccountNavLink href="#wishlist" icon={<Heart />} label="Wishlist" description="Your saved items" active={activeSection === 'wishlist'} />
+            <AccountNavLink href="#change-password" icon={<KeyRound />} label="Change Password" description="Update your password" active={activeSection === 'change-password'} />
             <button type="button" onClick={() => void onLogout()} disabled={loading} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-black/5 disabled:opacity-50">
               <LogOut className="h-4 w-4 shrink-0" />
               <span><strong className="block text-xs">Logout</strong><small className="mt-0.5 block text-[9px] text-black/45">Sign out from your account</small></span>
@@ -176,7 +211,12 @@ const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpd
           <section id="wishlist" className="scroll-mt-24">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-black sm:text-xl">Wishlist</h2>
-              {!wishlistLoading && <span className="text-[10px] font-bold text-black/45">{wishlistItems.length} saved {wishlistItems.length === 1 ? 'item' : 'items'}</span>}
+              {!wishlistLoading && (
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold text-black/45">{wishlistItems.length} saved {wishlistItems.length === 1 ? 'item' : 'items'}</span>
+                  {wishlistItems.length > 3 && !showAllWishlist && <button type="button" onClick={() => setShowAllWishlist(true)} className="inline-flex items-center gap-1 text-[10px] font-bold underline underline-offset-4">View All Wishlist <ArrowRight className="h-3 w-3" /></button>}
+                </div>
+              )}
             </div>
             {wishlistLoading ? (
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 3 }, (_, index) => <div key={index} className="h-44 animate-pulse rounded-2xl border border-black/5 bg-black/[0.04]" />)}</div>
@@ -189,10 +229,11 @@ const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpd
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {wishlistItems.map((item) => {
+                {(showAllWishlist ? wishlistItems : wishlistItems.slice(0, 3)).map((item) => {
                   const image = item.product.images?.find((entry) => entry.isPrimary)?.imageUrl ?? item.product.images?.[0]?.imageUrl;
                   const activeVariants = item.product.variants?.filter((variant) => variant.isActive !== false) ?? [];
                   const price = activeVariants.length > 0 ? Math.min(...activeVariants.map((variant) => Number(variant.price))) : 0;
+                  const canMoveToCart = activeVariants.some((variant) => Number(variant.stockQuantity ?? 0) > 0);
                   return (
                     <article key={item.id} className="group overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[0_8px_28px_rgba(0,0,0,0.03)]">
                       <Link to={`/product/${item.product.id}`} className="block aspect-[4/3] overflow-hidden bg-[#f4f1ed]">
@@ -203,7 +244,10 @@ const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpd
                           <div className="min-w-0"><Link to={`/product/${item.product.id}`} className="block truncate text-sm font-black hover:underline">{item.product.productName}</Link><p className="mt-1 truncate text-[10px] text-black/45">{item.product.material?.material || 'Frame'}{activeVariants[0]?.frameSize ? ` · ${activeVariants[0].frameSize}` : ''}</p></div>
                           <button type="button" onClick={() => void removeWishlistItem(item.productIdentifier)} aria-label={`Remove ${item.product.productName} from wishlist`} className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-black/10 text-black/55 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
                         </div>
-                        {price > 0 && <p className="mt-3 text-base font-black">₹{price.toLocaleString('en-IN')}</p>}
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          {price > 0 ? <p className="text-base font-black">₹{price.toLocaleString('en-IN')}</p> : <span />}
+                          <button type="button" disabled={!canMoveToCart} onClick={() => void moveWishlistItemToCart(item)} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-black px-3 text-[10px] font-bold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-black/25"><ShoppingBag className="h-3.5 w-3.5" />Move to Cart</button>
+                        </div>
                       </div>
                     </article>
                   );
@@ -224,7 +268,7 @@ const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpd
                   <DashboardInput label="Email address" type="email" icon={<Mail />} disabled registration={profileForm.register('email')} />
                   <DashboardInput label="Phone number" type="tel" icon={<Phone />} disabled={!editingProfile} error={profileForm.formState.errors.phoneNumber?.message} registration={profileForm.register('phoneNumber', { validate: (value) => !value || (value.trim().length >= 7 && value.trim().length <= 20) || 'Phone number must contain 7–20 characters' })} />
                   <DashboardInput label="Postal code" icon={<MapPin />} disabled={!editingProfile} error={profileForm.formState.errors.postalCode?.message} registration={profileForm.register('postalCode', { maxLength: { value: 20, message: 'Postal code is too long' } })} />
-                  <DashboardInput label="Address" icon={<MapPin />} disabled={!editingProfile} error={profileForm.formState.errors.addressLine?.message} registration={profileForm.register('addressLine', { maxLength: { value: 255, message: 'Address cannot exceed 255 characters' } })} />
+                  <div id="addresses" className="scroll-mt-24"><DashboardInput label="Address" icon={<MapPin />} disabled={!editingProfile} error={profileForm.formState.errors.addressLine?.message} registration={profileForm.register('addressLine', { maxLength: { value: 255, message: 'Address cannot exceed 255 characters' } })} /></div>
                   <DashboardInput label="City" disabled={!editingProfile} registration={profileForm.register('cityName', { maxLength: { value: 100, message: 'City name is too long' } })} error={profileForm.formState.errors.cityName?.message} />
                   <DashboardInput label="State" disabled={!editingProfile} registration={profileForm.register('stateName', { maxLength: { value: 100, message: 'State name is too long' } })} error={profileForm.formState.errors.stateName?.message} />
                   <DashboardInput label="Country" disabled={!editingProfile} registration={profileForm.register('countryName', { maxLength: { value: 100, message: 'Country name is too long' } })} error={profileForm.formState.errors.countryName?.message} />
