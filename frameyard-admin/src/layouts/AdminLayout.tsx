@@ -23,6 +23,7 @@ import {
   TicketPercent,
   BadgePercent,
   Mail,
+  CalendarDays,
 } from 'lucide-react';
 
 export const AdminLayout: React.FC = () => {
@@ -107,6 +108,7 @@ export const AdminLayout: React.FC = () => {
     { name: 'Coupons', path: '/admin/marketing/coupons', icon: TicketPercent, adminOnly: true },
     { name: 'Product Discounts', path: '/admin/marketing/product-discounts', icon: BadgePercent, adminOnly: true },
     { name: 'Newsletter', path: '/admin/newsletter', icon: Mail },
+    { name: 'Appointments', path: '/admin/appointments', icon: CalendarDays },
     { name: 'Notifications', path: '/admin/notifications', icon: Bell },
     { name: 'Employees', path: '/admin/employees', icon: IdCard, adminOnly: true },
     { name: 'Profile', path: '/admin/profile', icon: User },

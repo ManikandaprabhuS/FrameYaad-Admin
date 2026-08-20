@@ -194,3 +194,26 @@ npm run build
 - `src/pages/newsletter/NewsletterSubscribersPage.tsx` — subscriber management screen.
 - `src/features/customer/components/Footer.tsx` — public subscription UI and validation states.
 - `src/layouts/AdminLayout.tsx` and `src/routes/index.tsx` — staff navigation and protected route registration.
+
+## Appointment Booking Module
+
+### Customer Website
+
+- `/book-appointment` now provides the responsive public booking form for name, email, Indian phone, future booking date/time, Oddanchatram/Coimbatore location, and one or more frame requirements.
+- Selecting `Others` reveals a required custom-requirement field.
+- Includes inline client validation, disabled `Submitting...` state, duplicate-submit protection, safe API errors, and a booking success summary.
+
+### Admin and Employee Dashboard
+
+- Added `Appointments` to the staff sidebar for both Admin and Employee roles.
+- `/admin/appointments` provides server-side pagination, debounced name/email/phone search, status tabs, location and booking-date filters, responsive desktop table/mobile cards, loading skeletons, empty state, and retry handling.
+- `/admin/appointments/:id` displays customer details, original/current booking dates, frame requirements, aggregate email delivery status, reasons, and timestamps.
+- Status-aware actions enforce the supported UI flow: Confirm, Reschedule, Cancel, and Mark Completed. Reschedule and cancellation use the existing modal component; backend validation remains authoritative.
+
+### Frontend Files
+
+- `src/services/appointment.service.ts` — typed public and staff API integration.
+- `src/features/customer/pages/BookAppointmentPage.tsx` — public form and success state.
+- `src/pages/appointments/AppointmentsPage.tsx` — staff list and filters.
+- `src/pages/appointments/AppointmentDetailsPage.tsx` — details and lifecycle actions.
+- `src/layouts/AdminLayout.tsx` and `src/routes/index.tsx` — staff navigation and route registration.

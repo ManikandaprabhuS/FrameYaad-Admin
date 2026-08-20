@@ -18,6 +18,8 @@ const SettingsPage = lazy(() => import('../pages/settings/SettingsPage'));
 const EmployeesPage = lazy(() => import('../pages/employees/EmployeesPage'));
 const WishlistAnalyticsPage = lazy(() => import('../pages/wishlist/WishlistAnalyticsPage'));
 const NewsletterSubscribersPage = lazy(() => import('../pages/newsletter/NewsletterSubscribersPage'));
+const AppointmentsPage = lazy(() => import('../pages/appointments/AppointmentsPage'));
+const AppointmentDetailsPage = lazy(() => import('../pages/appointments/AppointmentDetailsPage'));
 const CouponsPage = lazy(() => import('../pages/marketing/coupon/CouponReferencePages').then(module => ({ default: module.CouponReferenceList })));
 const CouponDetails = lazy(() => import('../pages/marketing/coupon/CouponReferencePages').then(module => ({ default: module.CouponReferenceDetails })));
 const CouponDynamicWizard = lazy(() => import('../pages/marketing/coupon/CouponDynamicWizard').then(module => ({ default: module.CouponDynamicWizard })));
@@ -94,6 +96,14 @@ export const router = createBrowserRouter([
           {
             path: 'newsletter',
             element: <NewsletterSubscribersPage />,
+          },
+          {
+            path: 'appointments',
+            element: <AppointmentsPage />,
+          },
+          {
+            path: 'appointments/:id',
+            element: <AppointmentDetailsPage />,
           },
           {
             path: 'customers',
