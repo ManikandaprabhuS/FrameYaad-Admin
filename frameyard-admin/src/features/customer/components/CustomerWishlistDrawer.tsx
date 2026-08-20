@@ -41,7 +41,8 @@ const CustomerWishlistDrawer: React.FC<Props> = ({ open, onClose }) => {
 
   const removeItem = async (productIdentifier: string) => {
     try {
-      await toggleWishlist(productIdentifier);
+      const removed = await toggleWishlist(productIdentifier);
+      if (removed === null) return;
       showSuccess('Product removed from wishlist');
     } catch {
       showError('Wishlist could not be updated. Please try again.');

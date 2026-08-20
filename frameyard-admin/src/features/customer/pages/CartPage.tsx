@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import axios from 'axios';
-import { Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { Heart, Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { useAuthStore } from '../../../store/authStore';
 import { useCustomerCommerceStore } from '../../../store/customerCommerceStore';
-import { showError } from '../../../utils/toast';
+import { showError, showSuccess } from '../../../utils/toast';
 import { couponService, type CouponValidationResult } from '../../../services/coupon.service';
 import ColorSwatch from '../components/ColorSwatch';
 
@@ -16,12 +16,16 @@ const CartPage: React.FC = () => {
   const items = useCustomerCommerceStore((state) => state.cartItems);
   const updateQuantity = useCustomerCommerceStore((state) => state.updateCartQuantity);
   const removeItem = useCustomerCommerceStore((state) => state.removeCartItem);
+  const loadWishlist = useCustomerCommerceStore((state) => state.loadWishlist);
+  const toggleWishlist = useCustomerCommerceStore((state) => state.toggleWishlist);
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0), [items]);
   const cartSignature = useMemo(() => items.map((item) => `${item.key}:${item.quantity}:${item.unitPrice}`).sort().join('|'), [items]);
   const [promoCode, setPromoCode] = useState('');
   const [promoError, setPromoError] = useState('');
   const [applyingPromo, setApplyingPromo] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState<{ signature: string; result: CouponValidationResult } | null>(null);
+  const [removalChoiceKey, setRemovalChoiceKey] = useState<string | null>(null);
+  const [movingToWishlistKey, setMovingToWishlistKey] = useState<string | null>(null);
   const activePromo = appliedPromo?.signature === cartSignature ? appliedPromo.result : null;
   const finalTotal = activePromo?.total ?? subtotal;
 
@@ -55,6 +59,34 @@ const CartPage: React.FC = () => {
     navigate('/profile', { state: { returnTo: '/checkout' } });
   };
 
+  const moveToWishlist = async (item: (typeof items)[number]) => {
+    if (!isAuthenticated || user?.role !== 'CUSTOMER') {
+      showError('Please login to move this product to your wishlist');
+      navigate('/profile', { state: { returnTo: '/cart' } });
+      return;
+    }
+    if (!item.productIdentifier) {
+      showError('This product cannot be added to the wishlist right now.');
+      return;
+    }
+
+    setMovingToWishlistKey(item.key);
+    try {
+      await loadWishlist(user.id);
+      if (!useCustomerCommerceStore.getState().wishlistByProductIdentifier[item.productIdentifier]) {
+        const added = await toggleWishlist(item.productIdentifier);
+        if (added === null) return;
+      }
+      removeItem(item.key);
+      setRemovalChoiceKey(null);
+      showSuccess('Product moved to wishlist');
+    } catch {
+      showError('Product could not be moved to the wishlist. Please try again.');
+    } finally {
+      setMovingToWishlistKey(null);
+    }
+  };
+
   if (items.length === 0) return (
     <section className="mx-auto my-12 max-w-xl rounded-2xl border border-black/10 bg-white p-8 text-center shadow-sm">
       <ShoppingBag className="mx-auto h-10 w-10 text-black/30" />
@@ -73,7 +105,15 @@ const CartPage: React.FC = () => {
           <article key={item.key} className="flex gap-4 rounded-xl border border-black/10 bg-white p-3 shadow-sm sm:p-4">
             <div className="h-24 w-20 shrink-0 overflow-hidden rounded-lg bg-black/5 sm:h-28 sm:w-24">{item.imageUrl && <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />}</div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-2"><div className="min-w-0"><h2 className="truncate text-sm font-black">{item.name}</h2><p className="mt-1 text-xs text-black/50">{item.frameSize} · {item.material}</p><div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] font-semibold text-black/60"><span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-2 py-1"><ColorSwatch color={item.color} className="h-4 w-4" /> Color</span><span className="rounded-full border border-black/10 px-2 py-1">Mount: {item.mountType || 'None'}</span><span className="rounded-full border border-black/10 px-2 py-1">Glass: {item.glassType || 'None'}</span></div></div><button type="button" onClick={() => removeItem(item.key)} aria-label={`Remove ${item.name} from cart`} className="rounded-lg p-2 text-black/45 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /></button></div>
+              <div className="flex items-start justify-between gap-2"><div className="min-w-0"><h2 className="truncate text-sm font-black">{item.name}</h2><p className="mt-1 text-xs text-black/50">{item.frameSize} · {item.material}</p><div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] font-semibold text-black/60"><span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-2 py-1"><ColorSwatch color={item.color} className="h-4 w-4" /> Color</span><span className="rounded-full border border-black/10 px-2 py-1">Mount: {item.mountType || 'None'}</span><span className="rounded-full border border-black/10 px-2 py-1">Glass: {item.glassType || 'None'}</span></div></div><button type="button" onClick={() => setRemovalChoiceKey((current) => current === item.key ? null : item.key)} aria-label={`Remove or save ${item.name}`} aria-expanded={removalChoiceKey === item.key} className="rounded-lg p-2 text-black/45 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /></button></div>
+              {removalChoiceKey === item.key && (
+                <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-black/10 bg-[#fafafa] p-2.5">
+                  <span className="mr-auto text-[11px] font-bold text-black/60">Remove this item?</span>
+                  <button type="button" onClick={() => { removeItem(item.key); setRemovalChoiceKey(null); showSuccess('Product removed from cart'); }} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-red-200 bg-white px-3 text-[10px] font-bold text-red-600 hover:bg-red-50"><Trash2 className="h-3.5 w-3.5" />Delete</button>
+                  <button type="button" disabled={movingToWishlistKey === item.key} onClick={() => void moveToWishlist(item)} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-black px-3 text-[10px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-45"><Heart className="h-3.5 w-3.5" />{movingToWishlistKey === item.key ? 'Moving…' : 'Move to Wishlist'}</button>
+                  <button type="button" onClick={() => setRemovalChoiceKey(null)} aria-label="Cancel remove item" className="grid h-8 w-8 place-items-center rounded-md border border-black/10 text-black/50 hover:bg-white"><X className="h-3.5 w-3.5" /></button>
+                </div>
+              )}
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex h-9 items-center rounded-lg border border-black/15"><button type="button" onClick={() => updateQuantity(item.key, item.quantity - 1)} aria-label="Decrease quantity" className="grid h-full w-9 place-items-center"><Minus className="h-3.5 w-3.5" /></button><span className="w-8 text-center text-xs font-black">{item.quantity}</span><button type="button" onClick={() => updateQuantity(item.key, item.quantity + 1)} aria-label="Increase quantity" className="grid h-full w-9 place-items-center"><Plus className="h-3.5 w-3.5" /></button></div>
                 <p className="text-base font-black">₹{(item.unitPrice * item.quantity).toLocaleString('en-IN')}</p>

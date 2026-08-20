@@ -37,6 +37,7 @@ export const useCustomerCommerce = () => {
     }
     try {
       const added = await toggleStoredWishlist(product.productIdentifier);
+      if (added === null) return;
       showSuccess(added ? 'Product added to wishlist' : 'Product removed from wishlist');
     } catch {
       showError('Wishlist could not be updated. Please try again.');

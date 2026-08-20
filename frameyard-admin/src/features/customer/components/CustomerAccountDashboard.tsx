@@ -121,7 +121,8 @@ const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpd
 
   const removeWishlistItem = async (productIdentifier: string) => {
     try {
-      await toggleWishlist(productIdentifier);
+      const removed = await toggleWishlist(productIdentifier);
+      if (removed === null) return;
       showSuccess('Product removed from wishlist');
     } catch {
       showError('Wishlist could not be updated. Please try again.');
@@ -136,7 +137,8 @@ const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpd
     }
 
     try {
-      await toggleWishlist(item.productIdentifier);
+      const removed = await toggleWishlist(item.productIdentifier);
+      if (removed === null) return;
       addCartItem({
         productId: item.product.id,
         productIdentifier: item.productIdentifier,
