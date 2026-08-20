@@ -32,7 +32,10 @@ const clearStoredAuthToken = () => {
 };
 
 const getAuthErrorMessage = (error: unknown, fallback: string): string => {
-  if (!axios.isAxiosError<{ message?: string; error?: { message?: string } }>(error)) return fallback;
+  if (!axios.isAxiosError<{ message?: string; error?: { code?: string; message?: string } }>(error)) return fallback;
+  if (error.response?.data?.error?.code === 'EMAIL_NOT_VERIFIED') {
+    return 'Please verify your email to continue';
+  }
   return error.response?.data?.error?.message ?? error.response?.data?.message ?? fallback;
 };
 
