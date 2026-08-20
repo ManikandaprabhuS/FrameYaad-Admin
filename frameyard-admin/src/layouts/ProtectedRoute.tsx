@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { LoaderCircle } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import RouteErrorPage from '../pages/errors/RouteErrorPage';
 
 export const ProtectedRoute: React.FC = () => {
   const user = useAuthStore((state) => state.user);
@@ -29,7 +30,7 @@ export const ProtectedRoute: React.FC = () => {
   }
 
   if (user?.role !== 'ADMIN' && user?.role !== 'EMPLOYEE') {
-    return <Navigate to="/fyadminlogin" replace />;
+    return <RouteErrorPage />;
   }
 
   return <Outlet />;

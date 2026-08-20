@@ -37,7 +37,7 @@ export const OverviewPage: React.FC = () => {
   }, [fetchProducts, products.length]);
 
   useEffect(() => {
-    fetchOrders({ page: 1, limit: 200, dateFilter: 'all' }, { silent: useOrderStore.getState().orders.length > 0 });
+    fetchOrders({ page: 1, limit: 100, dateFilter: 'all' }, { silent: useOrderStore.getState().orders.length > 0 });
   }, [fetchOrders]);
 
   useEffect(() => {

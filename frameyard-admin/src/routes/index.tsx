@@ -4,6 +4,7 @@ import ProtectedRoute from '../layouts/ProtectedRoute';
 import AdminLayout from '../layouts/AdminLayout';
 import AdminOnlyRoute from '../layouts/AdminOnlyRoute';
 import CustomerLayout from '../layouts/CustomerLayout';
+import RouteErrorPage from '../pages/errors/RouteErrorPage';
 const LoginPage = lazy(() => import('../pages/auth/LoginPage'));
 const OverviewPage = lazy(() => import('../pages/overview/OverviewPage'));
 const ProductsPage = lazy(() => import('../pages/products/ProductsPage'));
@@ -38,6 +39,7 @@ const lazyElement = (element: React.ReactNode) => <Suspense fallback={LazyFallba
 export const router = createBrowserRouter([
   {
     element: <Suspense fallback={LazyFallback}><CustomerLayout /></Suspense>,
+    errorElement: <RouteErrorPage />,
     children: [
       { path: '/', element: <CustomerHomePage /> },
       { path: '/products', element: <CustomerProductsPage /> },
@@ -126,11 +128,15 @@ export const router = createBrowserRouter([
             path: 'profile',
             element: <ProfilePage />,
           },
+          {
+            path: '*',
+            element: <RouteErrorPage homePath="/admin/overview" />,
+          },
         ],
       },
     ],
   },
-  {path: '*', element: <Navigate to="/" replace />,},
+  {path: '*', element: <RouteErrorPage />,},
 ]);
 
 export default router;
