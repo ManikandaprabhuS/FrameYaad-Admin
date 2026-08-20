@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Heart, Menu, ShoppingCart, User, X } from 'lucide-react';
 import fyLogoIcon from '../../../assets/fy-logo-icon.jpeg';
@@ -25,12 +25,8 @@ const CustomerNavbar: React.FC = () => {
   const cartCount = useCustomerCommerceStore((state) => state.cartItems.reduce((total, item) => total + item.quantity, 0));
   const wishlistItems = useCustomerCommerceStore((state) => state.wishlistItems);
   const wishlistLoadedForUserId = useCustomerCommerceStore((state) => state.wishlistLoadedForUserId);
-  const loadWishlist = useCustomerCommerceStore((state) => state.loadWishlist);
   const wishlistCount = customerLoggedIn && wishlistLoadedForUserId === user.id ? wishlistItems.length : 0;
 
-  useEffect(() => {
-    if (customerLoggedIn) void loadWishlist(user.id);
-  }, [customerLoggedIn, loadWishlist, user]);
 
   const openWishlist = () => {
     if (!customerLoggedIn) {

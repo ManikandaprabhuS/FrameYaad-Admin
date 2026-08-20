@@ -76,10 +76,20 @@ This is the admin dashboard for the FrameYaad backend. It is a React + TypeScrip
 - Added request sequencing to Product, Customer, and Order stores so stale responses cannot overwrite newer filters.
 - Added route-level lazy loading with Suspense fallbacks for admin and customer pages.
 - Memoized the shared DataTable and Product Discount row transformation to reduce repeated table work.
+- Coalesced session restoration so layouts, protected routes, and customer profile pages share one in-flight authentication request.
+- Centralized customer wishlist hydration in `CustomerLayout` and removed duplicate Navbar/profile/drawer/hook fetches.
+- Throttled Premium Hero pointer updates to one render per animation frame without changing its loop, wheel, autoplay, or card geometry.
+- Limited the hero carousel working set and cache the five Favorites products instead of serializing the complete catalog.
+- Mount only the active mobile or desktop Favorites carousel so hidden duplicate cards no longer render.
+- Poll notifications every 30 seconds only while the tab is visible; overlapping and unchanged responses no longer rewrite layout state.
+- Lazy-loaded Recharts into a separate `RevenueChart` chunk, reducing the Overview page chunk from roughly 338 KB to 18 KB.
+- Added stale-response protection to Coupon and Product Discount list/detail stores and granular Zustand selectors.
+- Overview now uses server totals/status aggregates rather than partial cached arrays, while retaining its existing UI and report controls.
+- Customer list rows receive order summaries with the paginated users response instead of downloading the first 100 global orders separately.
 
 ### Pending
 
-- Replace Overview’s large order/customer/product downloads with a dedicated summary request or cached aggregates.
+- Replace Overview’s compact order history download used for revenue charts with a date-range aggregate endpoint.
 - Consolidate customer export order lookups to avoid one request per order.
 - Split the large Product editor into memoized sections and memoized table rows.
 - Add request cancellation with `AbortController` where supported by the API client.

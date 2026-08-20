@@ -57,6 +57,7 @@ type OrdersResponse = {
     totalCount: number;
     pendingCount: number;
     processingCount: number;
+    shippedCount: number;
     deliveredCount: number;
     cancelledCount: number;
   };
@@ -125,13 +126,14 @@ const summaryFor = (orders: Order[]): OrdersResponse['summary'] => ({
   totalCount: orders.length,
   pendingCount: orders.filter((order) => order.orderStatus === 'PLACED').length,
   processingCount: orders.filter((order) => ['CONFIRMED', 'PROCESSING', 'READY_TO_SHIP'].includes(order.orderStatus)).length,
+  shippedCount: orders.filter((order) => order.orderStatus === 'SHIPPED').length,
   deliveredCount: orders.filter((order) => order.orderStatus === 'DELIVERED').length,
   cancelledCount: orders.filter((order) => order.orderStatus === 'CANCELLED').length,
 });
 
 export const orderService = {
   getOrders: async (params: OrderQueryParams = {}): Promise<OrdersResponse> => {
-    const response = await api.get<ApiEnvelope<{ orders: BackendOrder[]; pagination: Pagination }>>('/orders', {
+    const response = await api.get<ApiEnvelope<{ orders: BackendOrder[]; pagination: Pagination; summary?: OrdersResponse['summary'] }>>('/orders', {
       params: {
         page: params.page,
         limit: params.limit,
@@ -143,7 +145,7 @@ export const orderService = {
     });
     const orders = response.data.data.orders.map(normalizeOrder);
     const pagination = response.data.data.pagination;
-    return { orders, pagination, summary: summaryFor(orders) };
+    return { orders, pagination, summary: response.data.data.summary ?? summaryFor(orders) };
   },
 
   getOrderById: async (id: string): Promise<Order> => {

@@ -35,18 +35,22 @@ interface NotificationState {
   removeNotification: (id: string) => Promise<void>;
 }
 
+let notificationFetchPromise: Promise<void> | null = null;
+
 export const useNotificationStore = create<NotificationState>((set) => ({
   notifications: [],
   loading: false,
   error: null,
 
   fetchNotifications: async (isBackground = false) => {
+    if (notificationFetchPromise) return notificationFetchPromise;
     if (!isBackground) {
       set({ loading: true, error: null });
     }
-    try {
-      const data = await notificationService.getNotifications();
-      const currentNotifications = useNotificationStore.getState().notifications;
+    notificationFetchPromise = (async () => {
+      try {
+        const data = await notificationService.getNotifications();
+        const currentNotifications = useNotificationStore.getState().notifications;
       
       if (currentNotifications.length > 0) {
         const currentIds = new Set(currentNotifications.map(n => n.id));
@@ -56,10 +60,17 @@ export const useNotificationStore = create<NotificationState>((set) => ({
         }
       }
       
-      set({ notifications: data, loading: false });
-    } catch (err: any) {
-      set({ error: err.response?.data?.message || 'Failed to fetch notifications', loading: false });
-    }
+        const changed = JSON.stringify(currentNotifications) !== JSON.stringify(data);
+        if (changed) set({ notifications: data, loading: false, error: null });
+        else if (!isBackground) set({ loading: false, error: null });
+      } catch (err: any) {
+        if (!isBackground) set({ error: err.response?.data?.message || 'Failed to fetch notifications', loading: false });
+      } finally {
+        notificationFetchPromise = null;
+      }
+    })();
+
+    return notificationFetchPromise;
   },
 
   markAllAsRead: async () => {

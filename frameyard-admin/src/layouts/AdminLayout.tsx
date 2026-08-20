@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useNotifications from '../hooks/useNotifications';
@@ -130,7 +130,7 @@ export const AdminLayout: React.FC = () => {
     });
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = useMemo(() => notifications.reduce((count, notification) => count + (notification.read ? 0 : 1), 0), [notifications]);
 
   return (
     <div className="admin-monochrome min-h-screen bg-background flex text-on-background">

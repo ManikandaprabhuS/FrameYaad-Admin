@@ -13,10 +13,8 @@ type Props = {
 };
 
 const CustomerWishlistDrawer: React.FC<Props> = ({ open, onClose }) => {
-  const user = useAuthStore((state) => state.user);
   const items = useCustomerCommerceStore((state) => state.wishlistItems);
   const loading = useCustomerCommerceStore((state) => state.wishlistLoading);
-  const loadWishlist = useCustomerCommerceStore((state) => state.loadWishlist);
   const toggleWishlist = useCustomerCommerceStore((state) => state.toggleWishlist);
 
   useEffect(() => {
@@ -33,9 +31,6 @@ const CustomerWishlistDrawer: React.FC<Props> = ({ open, onClose }) => {
     };
   }, [onClose, open]);
 
-  useEffect(() => {
-    if (open && user?.role === 'CUSTOMER') void loadWishlist(user.id);
-  }, [loadWishlist, open, user]);
 
   if (!open) return null;
 

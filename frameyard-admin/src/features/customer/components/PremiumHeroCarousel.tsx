@@ -33,6 +33,7 @@ const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loa
   const resetTimerRef = useRef<number | null>(null);
   const resumeTimerRef = useRef<number | null>(null);
   const lastWheelMoveRef = useRef(0);
+  const dragFrameRef = useRef<number | null>(null);
   const [viewportWidth, setViewportWidth] = useState(getResponsiveViewportWidth);
   const [position, setPosition] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -147,7 +148,7 @@ const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loa
     return { absoluteDistance, translateY, translateZ, scaleX, scaleY, rotateY, rotateZ };
   };
 
-  const getCardTranslateX = (distance: number) => {
+  const getCardTranslateX = () => {
     return 0;
   };
 
@@ -200,6 +201,7 @@ const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loa
   useEffect(() => () => {
     if (resetTimerRef.current !== null) window.clearTimeout(resetTimerRef.current);
     if (resumeTimerRef.current !== null) window.clearTimeout(resumeTimerRef.current);
+    if (dragFrameRef.current !== null) window.cancelAnimationFrame(dragFrameRef.current);
   }, []);
 
   useEffect(() => {
@@ -269,7 +271,13 @@ const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loa
     const distance = event.clientX - session.startX;
     if (Math.abs(distance) > 5) movedRef.current = true;
     session.currentPosition = session.startPosition - distance / cardStep;
-    setPosition(session.currentPosition);
+    if (dragFrameRef.current === null) {
+      dragFrameRef.current = window.requestAnimationFrame(() => {
+        dragFrameRef.current = null;
+        const activeSession = pointerSessionRef.current;
+        if (activeSession) setPosition(activeSession.currentPosition);
+      });
+    }
   };
 
   const handlePointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -280,6 +288,10 @@ const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loa
 
     const positionDelta = Math.round(pointerSessionRef.current.currentPosition - pointerSessionRef.current.startPosition);
     const nextPosition = pointerSessionRef.current.startPosition + Math.max(-1, Math.min(1, positionDelta));
+    if (dragFrameRef.current !== null) {
+      window.cancelAnimationFrame(dragFrameRef.current);
+      dragFrameRef.current = null;
+    }
     pointerSessionRef.current = null;
     setDragging(false);
     snapTo(nextPosition);
@@ -366,7 +378,7 @@ const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loa
                 const center = Math.floor(visibleCards / 2);
                 const distance = index - center;
                 const { translateY, translateZ, scaleX, scaleY, rotateY, rotateZ } = getCardGeometry(distance);
-                const translateX = getCardTranslateX(distance);
+                const translateX = getCardTranslateX();
                 const clipId = `hero-skeleton-envelope-${index}`;
                 return <div key={index} className="origin-center shrink-0 animate-pulse overflow-hidden bg-neutral-200 shadow-[0_12px_32px_rgba(0,0,0,0.14)] [backface-visibility:hidden] will-change-transform" style={{ width: cardWidth, marginRight: cardStep - cardWidth, clipPath: `url(#${clipId})`, transform: `translate3d(${translateX}px, ${translateY}px, ${translateZ}px) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale3d(${scaleX}, ${scaleY}, 1)` }}><svg className="absolute h-0 w-0" aria-hidden="true"><defs><clipPath id={clipId} clipPathUnits="objectBoundingBox"><path d={getCardClipPathData(distance)} /></clipPath></defs></svg><div className="aspect-[3/4] w-full bg-gradient-to-br from-neutral-100 via-neutral-200 to-neutral-300" /></div>;
               })}
@@ -387,7 +399,7 @@ const PremiumHeroCarousel: React.FC<PremiumHeroCarouselProps> = ({ products, loa
             {loopedProducts.map((product, index) => {
               const distance = index - position;
               const { absoluteDistance, translateY, translateZ, scaleX, scaleY, rotateY, rotateZ } = getCardGeometry(distance);
-              const translateX = getCardTranslateX(distance);
+              const translateX = getCardTranslateX();
               const visibleCenterIndex = Math.round(position);
               const isCentered = isCompactViewport ? index === visibleCenterIndex : Math.abs(distance) < 0.5;
               const isNearViewport = absoluteDistance <= visibleCards;

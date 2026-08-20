@@ -16,7 +16,7 @@ const FAVORITES_CACHE_KEY = 'frameyaad-favorites-products';
 const readCachedProducts = (): Product[] => {
   try {
     const cachedProducts = window.localStorage.getItem(FAVORITES_CACHE_KEY);
-    return cachedProducts ? (JSON.parse(cachedProducts) as Product[]) : [];
+    return cachedProducts ? (JSON.parse(cachedProducts) as Product[]).slice(0, 5) : [];
   } catch {
     return [];
   }
@@ -40,10 +40,11 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
   const desktopCarouselRef = useRef<HTMLDivElement | null>(null);
   const mobileTrackRef = useRef<HTMLDivElement | null>(null);
   const wheelLockedRef = useRef(false);
-  const [cachedProducts, setCachedProducts] = useState<Product[]>(readCachedProducts);
+  const [cachedProducts] = useState<Product[]>(readCachedProducts);
   const [mobileActiveIndex, setMobileActiveIndex] = useState(1);
   const [desktopIndex, setDesktopIndex] = useState(1);
   const [desktopTransition, setDesktopTransition] = useState(true);
+  const [isDesktopLayout, setIsDesktopLayout] = useState(() => window.matchMedia('(min-width: 768px)').matches);
   const { customerLoggedIn, wishlist, toggleWishlist, addToCart } = useCustomerCommerce();
 
   const sourceProducts = products.length > 0 ? products : cachedProducts;
@@ -70,15 +71,21 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
   const desktopOffset = -desktopIndex * (CARD_WIDTH + CARD_GAP) - CARD_WIDTH / 2;
 
   useEffect(() => {
-    if (products.length === 0) return;
+    if (featuredProducts.length === 0 || products.length === 0) return;
 
-    setCachedProducts(products);
     try {
-      window.localStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(products));
+      window.localStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(featuredProducts));
     } catch {
       // The live API data still renders if browser storage is unavailable.
     }
-  }, [products]);
+  }, [featuredProducts, products.length]);
+
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 768px)');
+    const updateLayout = () => setIsDesktopLayout(query.matches);
+    query.addEventListener('change', updateLayout);
+    return () => query.removeEventListener('change', updateLayout);
+  }, []);
 
   useEffect(() => {
     if (productCount === 0) return;
@@ -193,9 +200,9 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
           </p>
         </div>
 
-        <div
+        {isDesktopLayout ? <div
           ref={desktopCarouselRef}
-          className="relative mx-auto hidden h-[400px] max-w-[1200px] overflow-hidden px-6 pt-16 md:block"
+          className="relative mx-auto h-[400px] max-w-[1200px] overflow-hidden px-6 pt-16"
           aria-label="Featured product carousel"
         >
           <div
@@ -245,9 +252,9 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
               );
                 })}
           </div>
-        </div>
+        </div> :
 
-        <div className="md:hidden">
+        <div>
           <div
             ref={mobileTrackRef}
             onScroll={handleMobileScroll}
@@ -296,7 +303,7 @@ const FeaturedProductsCarousel: React.FC<FeaturedProductsCarouselProps> = ({ pro
               );
                 })}
           </div>
-        </div>
+        </div>}
       </div>
     </section>
   );

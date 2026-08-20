@@ -56,6 +56,7 @@ type Props = {
 const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpdate, onLogout, onChangePassword }) => {
   const location = useLocation();
   const profileForm = useForm<ProfileValues>();
+  const resetProfileForm = profileForm.reset;
   const passwordForm = useForm<PasswordValues>({
     defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
   });
@@ -77,7 +78,7 @@ const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpd
       : null;
 
   useEffect(() => {
-    profileForm.reset({
+    resetProfileForm({
       name: user.name || '',
       email: user.email || '',
       phoneNumber: user.phoneNumber || '',
@@ -87,7 +88,7 @@ const CustomerAccountDashboard: React.FC<Props> = ({ user, loading, error, onUpd
       countryName: user.countryName || '',
       postalCode: user.postalCode || '',
     });
-  }, [profileForm, user]);
+  }, [resetProfileForm, user.addressLine, user.cityName, user.countryName, user.email, user.name, user.phoneNumber, user.postalCode, user.stateName]);
 
   useEffect(() => {
     let active = true;

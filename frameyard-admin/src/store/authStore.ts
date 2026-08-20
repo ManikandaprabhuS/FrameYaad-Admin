@@ -49,6 +49,7 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   loading: boolean;
+  authChecked: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   loginCustomer: (email: string, password: string) => Promise<boolean>;
@@ -60,11 +61,14 @@ interface AuthState {
   clearError: () => void;
 }
 
+let authCheckPromise: Promise<void> | null = null;
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   token: null,
   isAuthenticated: false,
   loading: false,
+  authChecked: !getStoredAuthToken(),
   error: null,
 
  login: async (email, password) => {
@@ -103,6 +107,7 @@ if (token) {
       token,
       isAuthenticated: true,
       loading: false,
+      authChecked: true,
     });
     return true;
   } catch (err: unknown) {
@@ -131,6 +136,7 @@ if (token) {
         token: response.accessToken,
         isAuthenticated: true,
         loading: false,
+        authChecked: true,
         error: null,
       });
       return true;
@@ -141,6 +147,7 @@ if (token) {
         token: null,
         isAuthenticated: false,
         loading: false,
+        authChecked: true,
         error: getAuthErrorMessage(err, 'Email or password is incorrect'),
       });
       return false;
@@ -195,6 +202,7 @@ if (token) {
       token: null,
       isAuthenticated: false,
       loading: false,
+      authChecked: true,
     });
 
   } catch {
@@ -207,39 +215,36 @@ if (token) {
       token: null,
       isAuthenticated: false,
       loading: false,
+      authChecked: true,
     });
   }
 },
   checkAuth: async () => {
+    if (authCheckPromise) return authCheckPromise;
 
-  set({
-    loading: true,
-  });
-  try {
-    const user =await authService.me();
-   const token = getStoredAuthToken();
+    if (!getStoredAuthToken()) {
+      set({ user: null, token: null, isAuthenticated: false, loading: false, authChecked: true });
+      return;
+    }
 
-   useCustomerCommerceStore.getState().setCartOwner(user.role === 'CUSTOMER' ? user.id : null, user.role === 'CUSTOMER');
+    authCheckPromise = (async () => {
+      set({ loading: true });
+      try {
+        const user = await authService.me();
+        const token = getStoredAuthToken();
+        useCustomerCommerceStore.getState().setCartOwner(user.role === 'CUSTOMER' ? user.id : null, user.role === 'CUSTOMER');
+        set({ user, token, isAuthenticated: true, loading: false, authChecked: true });
+      } catch {
+        clearStoredAuthToken();
+        useCustomerCommerceStore.getState().setCartOwner(null);
+        set({ user: null, token: null, isAuthenticated: false, loading: false, authChecked: true });
+      } finally {
+        authCheckPromise = null;
+      }
+    })();
 
-   set({
-  user,
-  token,
-  isAuthenticated: true,
-  loading: false,
-});
-
-  } catch {
-
-    set({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      loading: false,
-    });
-    clearStoredAuthToken();
-    useCustomerCommerceStore.getState().setCartOwner(null);
-  }
-},
+    return authCheckPromise;
+  },
 
   updateProfile: async (profileData) => {
     set({ loading: true, error: null });

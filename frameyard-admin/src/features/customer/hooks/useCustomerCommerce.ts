@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuthStore } from '../../../store/authStore';
@@ -12,14 +12,10 @@ export const useCustomerCommerce = () => {
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const wishlist = useCustomerCommerceStore((state) => state.wishlistByProductIdentifier);
-  const loadWishlist = useCustomerCommerceStore((state) => state.loadWishlist);
   const toggleStoredWishlist = useCustomerCommerceStore((state) => state.toggleWishlist);
   const addCartItem = useCustomerCommerceStore((state) => state.addCartItem);
   const customerLoggedIn = isAuthenticated && user?.role === 'CUSTOMER';
 
-  useEffect(() => {
-    if (customerLoggedIn && user) void loadWishlist(user.id);
-  }, [customerLoggedIn, loadWishlist, user]);
 
   const requestLogin = useCallback((message: string, returnTo = location.pathname) => {
     showError(message);

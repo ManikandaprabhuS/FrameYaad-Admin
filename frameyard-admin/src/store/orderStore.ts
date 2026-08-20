@@ -43,6 +43,7 @@ type OrderSummary = {
   totalCount: number;
   pendingCount: number;
   processingCount: number;
+  shippedCount: number;
   deliveredCount: number;
   cancelledCount: number;
 };
@@ -72,12 +73,14 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     total: 0,
     totalPages: 1,
   },
-  summary: cached?.summary ?? {
+  summary: {
     totalCount: 0,
     pendingCount: 0,
     processingCount: 0,
+    shippedCount: 0,
     deliveredCount: 0,
     cancelledCount: 0,
+    ...(cached?.summary ?? {}),
   },
   lastQuery: cached?.lastQuery ?? {
     page: 1,

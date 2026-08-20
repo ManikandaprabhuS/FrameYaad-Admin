@@ -1,12 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import useProducts from '../../hooks/useProducts';
 import useOrders from '../../hooks/useOrders';
 import useCustomers from '../../hooks/useCustomers';
+import { useOrderStore } from '../../store/orderStore';
 import KpiCard from '../../components/ui/KpiCard';
 import Badge from '../../components/ui/Badge';
 import { 
-  DollarSign, 
   ShoppingBag, 
   Users, 
   Package, 
@@ -14,21 +14,14 @@ import {
   IndianRupee,
   Download
 } from 'lucide-react';
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip
-} from 'recharts';
+
+const RevenueChart = lazy(() => import('./RevenueChart'));
 
 export const OverviewPage: React.FC = () => {
   const navigate = useNavigate();
-  const { products, fetchProducts, loading: loadingProducts } = useProducts(false);
-  const { orders, fetchOrders, loading: loadingOrders } = useOrders(false);
-  const { customers, fetchCustomers, loading: loadingCustomers } = useCustomers(false);
+  const { products, pagination: productPagination, fetchProducts } = useProducts(false);
+  const { orders, pagination: orderPagination, summary: orderSummary, fetchOrders } = useOrders(false);
+  const { total: customerTotal, fetchCustomers } = useCustomers(false);
   const today = new Date();
   type ReportRange = 'today' | 'week' | 'month' | 'year' | 'custom';
   const [reportRange, setReportRange] = useState<ReportRange>('month');
@@ -39,15 +32,19 @@ export const OverviewPage: React.FC = () => {
 
   useEffect(() => {
     if (products.length === 0) {
-      fetchProducts();
+      fetchProducts({ page: 1, limit: 50, isActive: true });
     }
-    if (orders.length === 0) {
-      fetchOrders({ page: 1, limit: 200, dateFilter: 'all' });
+  }, [fetchProducts, products.length]);
+
+  useEffect(() => {
+    fetchOrders({ page: 1, limit: 200, dateFilter: 'all' }, { silent: useOrderStore.getState().orders.length > 0 });
+  }, [fetchOrders]);
+
+  useEffect(() => {
+    if (customerTotal === 0) {
+      fetchCustomers(1, 1);
     }
-    if (customers.length === 0) {
-      fetchCustomers();
-    }
-  }, [fetchCustomers, fetchOrders, fetchProducts]);
+  }, [customerTotal, fetchCustomers]);
 
   const reportDateRange = useMemo(() => {
     const now = new Date();
@@ -124,9 +121,9 @@ export const OverviewPage: React.FC = () => {
     (sum, o) => (o.orderStatus !== 'CANCELLED' ? sum + Number(o.totalAmount || 0) : sum),
     0
   );
-  const calculatedOrders = orders.length;
-  const calculatedCustomers = customers.length;
-  const calculatedProducts = products.filter((product) => product.isActive).length;
+  const calculatedOrders = orderPagination.total;
+  const calculatedCustomers = customerTotal;
+  const calculatedProducts = productPagination.total;
 
   const chartData = useMemo(() => {
     const formatDateKey = (date: Date) =>
@@ -284,11 +281,11 @@ export const OverviewPage: React.FC = () => {
   const displayLowStock = lowStockAlerts;
 
   // Order Fulfillment quantities
-  const pendingCount = orders.filter(o => o.orderStatus === 'PLACED').length;
-  const processingCount = orders.filter(o => o.orderStatus === 'PROCESSING').length;
-  const shippedCount = orders.filter(o => o.orderStatus === 'SHIPPED').length;
-  const deliveredCount = orders.filter(o => o.orderStatus === 'DELIVERED').length;
-  const cancelledCount = orders.filter(o => o.orderStatus === 'CANCELLED').length;
+  const pendingCount = orderSummary.pendingCount;
+  const processingCount = orderSummary.processingCount;
+  const shippedCount = orderSummary.shippedCount;
+  const deliveredCount = orderSummary.deliveredCount;
+  const cancelledCount = orderSummary.cancelledCount;
   const navigateToOrdersByStatus = (status: string) => {
     navigate(`/admin/orders?status=${status}`);
   };
@@ -399,34 +396,9 @@ export const OverviewPage: React.FC = () => {
           </div>
           
           <div className="w-full h-64 mt-auto">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="revenueGreenFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#111827" stopOpacity={0.34} />
-                    <stop offset="48%" stopColor="#111827" stopOpacity={0.14} />
-                    <stop offset="100%" stopColor="#111827" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="0" vertical stroke="rgba(15,23,42,0.08)" />
-                <XAxis dataKey="day" tickLine={false} axisLine={false} style={{ fontSize: '12px', fill: '#6b7280', fontWeight: 700 }} />
-                <YAxis tickLine={false} axisLine={false} style={{ fontSize: '12px', fill: '#6b7280', fontWeight: 700 }} tickFormatter={(v) => `₹${v}`} />
-                <Tooltip 
-                  contentStyle={{ background: '#fff', border: '1px solid #c3c6d7', borderRadius: '10px', color: '#111827', fontSize: '12px' }}
-                  labelStyle={{ color: '#111827', fontWeight: 700 }}
-                  formatter={(value) => [`₹${value}`, 'Revenue']}
-                />
-                <Area
-                  type="natural"
-                  dataKey="revenue"
-                  stroke="#111827"
-                  strokeWidth={3.2}
-                  fill="url(#revenueGreenFill)"
-                  dot={{ r: 4.5, stroke: '#111827', strokeWidth: 2, fill: '#ffffff' }}
-                  activeDot={{ r: 6, stroke: '#ffffff', strokeWidth: 2, fill: '#111827' }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <Suspense fallback={<div className="h-full w-full animate-pulse rounded-lg bg-black/[0.04]" />}>
+              <RevenueChart data={chartData} />
+            </Suspense>
           </div>
         </div>
 

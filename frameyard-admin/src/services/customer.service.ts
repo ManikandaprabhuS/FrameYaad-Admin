@@ -8,6 +8,7 @@ type CustomerApi = Partial<Customer> & {
   state?: string | null;
   country?: string | null;
   createdById?: string | null;
+  orderSummaries?: OrderSummaryApi[];
 };
 
 export interface CustomerResponse {
@@ -55,6 +56,7 @@ const normalizeCustomer = (
 type OrderSummaryApi = {
   id: string;
   userId: string;
+  orderNumber: string;
   status: string;
   totalPrice: string | number;
   createdAt: string;
@@ -104,19 +106,14 @@ export const customerService = {
   },
 
   getCustomers: async (page = 1, limit = 10, search?: string): Promise<CustomerResponse> => {
-    const [userResponse, orderResponse] = await Promise.all([
-      api.get<ApiEnvelope<{ users: CustomerApi[]; pagination: Pagination }>>('/users', {
-        params: { page, limit, ...(search ? { search } : {}) },
-      }),
-      api.get<ApiEnvelope<{ orders: OrderSummaryApi[]; pagination: Pagination }>>('/orders', {
-        params: { page: 1, limit: 100 },
-      }),
-    ]);
+    const userResponse = await api.get<ApiEnvelope<{ users: CustomerApi[]; pagination: Pagination }>>('/users', {
+      params: { page, limit, ...(search ? { search } : {}) },
+    });
     const customers = userResponse.data.data.users.map((customer) => {
-      const orders = orderResponse.data.data.orders
-        .filter((order) => order.userId === customer.id)
+      const orders = (customer.orderSummaries ?? [])
         .map((order) => ({
           id: order.id,
+          orderNumber: order.orderNumber,
           orderStatus: order.status,
           totalAmount: Number(order.totalPrice),
           createdAt: order.createdAt,

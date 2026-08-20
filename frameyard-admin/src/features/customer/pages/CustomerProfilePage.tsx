@@ -57,28 +57,17 @@ const CustomerProfilePage: React.FC = () => {
   const authError = useAuthStore((state) => state.error);
   const loginCustomer = useAuthStore((state) => state.loginCustomer);
   const registerCustomer = useAuthStore((state) => state.registerCustomer);
-  const checkAuth = useAuthStore((state) => state.checkAuth);
+  const authChecked = useAuthStore((state) => state.authChecked);
   const updateProfile = useAuthStore((state) => state.updateProfile);
   const changePassword = useAuthStore((state) => state.changePassword);
   const logout = useAuthStore((state) => state.logout);
   const clearError = useAuthStore((state) => state.clearError);
   const [mode, setMode] = useState<AuthMode>('login');
-  const [checkingSession, setCheckingSession] = useState(true);
   const [confirmationEmail, setConfirmationEmail] = useState('');
   const customerAuthenticated = isAuthenticated && user?.role === 'CUSTOMER';
   const returnTo = (location.state as { returnTo?: string } | null)?.returnTo;
 
-  useEffect(() => {
-    let active = true;
-    void checkAuth().finally(() => {
-      if (active) setCheckingSession(false);
-    });
-    return () => {
-      active = false;
-    };
-  }, [checkAuth]);
-
-  if (checkingSession) return <ProfileSkeleton />;
+  if (!authChecked) return <ProfileSkeleton />;
 
   if (!customerAuthenticated || !user) {
     return (

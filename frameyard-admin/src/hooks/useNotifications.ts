@@ -11,17 +11,22 @@ export const useNotifications = (autoFetch = false) => {
   const removeNotification = useNotificationStore((state) => state.removeNotification);
 
   useEffect(() => {
-    if (autoFetch) {
-      if (notifications.length === 0) {
-        fetchNotifications(false);
-      }
+    if (!autoFetch) return;
 
-      const interval = setInterval(() => {
-        fetchNotifications(true);
-      }, 10000);
-
-      return () => clearInterval(interval);
+    if (useNotificationStore.getState().notifications.length === 0) {
+      void fetchNotifications(false);
     }
+
+    const refresh = () => {
+      if (document.visibilityState === 'visible') void fetchNotifications(true);
+    };
+    const interval = window.setInterval(refresh, 30000);
+    document.addEventListener('visibilitychange', refresh);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', refresh);
+    };
   }, [autoFetch, fetchNotifications]);
 
   return {
