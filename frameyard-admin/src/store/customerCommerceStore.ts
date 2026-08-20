@@ -84,6 +84,7 @@ type CommerceState = {
   setCartOwner: (userId: string | null, claimGuestCart?: boolean) => void;
   loadWishlist: (userId: string) => Promise<void>;
   toggleWishlist: (productIdentifier: string) => Promise<boolean | null>;
+  moveCartItemToWishlist: (key: string, productIdentifier: string) => Promise<boolean>;
   clearWishlist: () => void;
 };
 
@@ -188,6 +189,35 @@ export const useCustomerCommerceStore = create<CommerceState>((set, get) => ({
         }));
         return true;
       });
+    } finally {
+      pendingWishlistMutations.delete(productIdentifier);
+    }
+  },
+
+  moveCartItemToWishlist: async (key, productIdentifier) => {
+    if (pendingWishlistMutations.has(productIdentifier)) return false;
+    pendingWishlistMutations.add(productIdentifier);
+
+    try {
+      await enqueueWishlistOperation(async () => {
+        const wishlistItem = await customerWishlistService.moveFromCart(productIdentifier);
+        set((state) => {
+          const cartItems = state.cartItems.filter((item) => item.key !== key);
+          writeCart(state.cartOwnerId, cartItems);
+          return {
+            cartItems,
+            wishlistByProductIdentifier: {
+              ...state.wishlistByProductIdentifier,
+              [productIdentifier]: wishlistItem.id,
+            },
+            wishlistItems: [
+              wishlistItem,
+              ...state.wishlistItems.filter((item) => item.id !== wishlistItem.id),
+            ],
+          };
+        });
+      });
+      return true;
     } finally {
       pendingWishlistMutations.delete(productIdentifier);
     }

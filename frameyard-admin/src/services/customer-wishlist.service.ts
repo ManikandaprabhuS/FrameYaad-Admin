@@ -46,6 +46,11 @@ export const customerWishlistService = {
     return response.data.data.wishlistItem;
   },
 
+  moveFromCart: async (productIdentifier: string): Promise<CustomerWishlistItem> => {
+    const response = await api.post<ApiEnvelope<{ wishlistItem: CustomerWishlistItem }>>('/cart/move-to-wishlist', { productIdentifier });
+    return response.data.data.wishlistItem;
+  },
+
   remove: async (wishlistItemId: string): Promise<void> => {
     await api.delete(`/wishlist/${wishlistItemId}`);
   },

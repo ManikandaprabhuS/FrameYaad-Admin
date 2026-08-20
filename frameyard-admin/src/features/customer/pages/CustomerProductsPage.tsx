@@ -190,16 +190,13 @@ const CustomerProductsPage: React.FC = () => {
             type="range"
             min={0}
             max={priceCeiling}
-            step={Math.max(50, Math.round(priceCeiling / 20))}
+            step={50}
             value={effectiveMaximumPrice}
             aria-label="Maximum product price"
             onChange={(event) => updateFilter(() => setMaximumPrice(Number(event.target.value)))}
             className="w-full accent-black"
           />
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => setPage(1)} className="rounded-md bg-black px-3 py-2 text-[10px] font-bold text-white">Apply</button>
-            <button type="button" onClick={() => updateFilter(() => setMaximumPrice(null))} className="rounded-md border border-black/15 px-3 py-2 text-[10px] font-bold">Reset</button>
-          </div>
+          <button type="button" onClick={() => updateFilter(() => setMaximumPrice(null))} className="mt-3 w-full rounded-md border border-black/15 px-3 py-2 text-[10px] font-bold">Reset</button>
         </FilterSection>
 
         <FilterSection title="By promotions">

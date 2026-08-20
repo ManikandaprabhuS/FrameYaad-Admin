@@ -16,9 +16,9 @@ const CartPage: React.FC = () => {
   const items = useCustomerCommerceStore((state) => state.cartItems);
   const updateQuantity = useCustomerCommerceStore((state) => state.updateCartQuantity);
   const removeItem = useCustomerCommerceStore((state) => state.removeCartItem);
-  const loadWishlist = useCustomerCommerceStore((state) => state.loadWishlist);
-  const toggleWishlist = useCustomerCommerceStore((state) => state.toggleWishlist);
+  const moveCartItemToWishlist = useCustomerCommerceStore((state) => state.moveCartItemToWishlist);
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0), [items]);
+  const itemCount = useMemo(() => items.reduce((total, item) => total + item.quantity, 0), [items]);
   const cartSignature = useMemo(() => items.map((item) => `${item.key}:${item.quantity}:${item.unitPrice}`).sort().join('|'), [items]);
   const [promoCode, setPromoCode] = useState('');
   const [promoError, setPromoError] = useState('');
@@ -72,12 +72,8 @@ const CartPage: React.FC = () => {
 
     setMovingToWishlistKey(item.key);
     try {
-      await loadWishlist(user.id);
-      if (!useCustomerCommerceStore.getState().wishlistByProductIdentifier[item.productIdentifier]) {
-        const added = await toggleWishlist(item.productIdentifier);
-        if (added === null) return;
-      }
-      removeItem(item.key);
+      const moved = await moveCartItemToWishlist(item.key, item.productIdentifier);
+      if (!moved) return;
       setRemovalChoiceKey(null);
       showSuccess('Product moved to wishlist');
     } catch {
@@ -98,8 +94,11 @@ const CartPage: React.FC = () => {
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      <h1 className="text-3xl font-black text-black">Your cart</h1>
-      <p className="mt-1 text-sm text-black/50">Review your selected frames before checkout.</p>
+      <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
+        <h1 className="text-3xl font-black text-black">Your cart</h1>
+        <span className="mb-1 rounded-full bg-black px-2.5 py-1 text-[10px] font-bold text-white">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
+      </div>
+      <p className="mt-1 text-sm text-black/50">Review your {items.length} product {items.length === 1 ? 'selection' : 'selections'} and quantities before checkout.</p>
       <div className="mt-7 grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="space-y-3">{items.map((item) => (
           <article key={item.key} className="flex gap-4 rounded-xl border border-black/10 bg-white p-3 shadow-sm sm:p-4">
